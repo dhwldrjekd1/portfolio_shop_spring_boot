@@ -1,83 +1,111 @@
 package com.example.demo.order.service;
 
 import com.example.demo.cart.service.CartService;
-import com.example.demo.item.item.dto.ItemRead;
-import com.example.demo.item.item.service.ItemService;
-import com.example.demo.order.dto.OrderRead;
-import com.example.demo.order.dto.OrderRequest;
-import com.example.demo.order.entity.OrderEntity;
-import com.example.demo.order.entity.OrderItemEntity;
+import com.example.demo.item.entity.Item;
+import com.example.demo.item.repository.ItemRepository;
+import com.example.demo.member.service.MemberService;
+import com.example.demo.order.entity.Order;
+import com.example.demo.order.entity.OrderItem;
 import com.example.demo.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class BaseOrderService implements OrderService {
 
-    private final OrderRepository orderRepository; // ✅ orderItemRepository -> orderRepository 수정
-    private final OrderItemService orderItemService;
-    private final ItemService itemService;
+    private final OrderRepository orderRepository;
     private final CartService cartService;
+    private final ItemRepository itemRepository;
+    private final MemberService memberService; // 등급 업데이트용
 
-    // 주문 목록 조회
     @Override
-    public List<OrderRead> findAll(Integer memberId) {
-        return orderRepository.findAllByMemberIdOrderByIdDesc(memberId).stream() // ✅ orderItemRepository -> orderRepository 수정
-                .map(OrderEntity::toRead) // ✅ (Order::toRead) 괄호 오류 수정
-                .toList();
+    public Order save(String loginId, String name, String address, String payment, String cardNumber, Integer amount, List<Map<String, Object>> items) {
+        Order order = new Order(loginId, name, address, payment, cardNumber, amount);
+        orderRepository.save(order);
+
+        // 주문 상품 저장
+        for (Map<String, Object> item : items) {
+            Integer itemId = (Integer) item.get("itemId");
+            Integer quantity = (Integer) item.get("quantity");
+            String itemName = (String) item.get("itemName");
+            String color = (String) item.get("color");
+            String size = (String) item.get("size");
+            OrderItem orderItem = new OrderItem(itemId, quantity, itemName, color, size, order);
+            order.getOrderItems().add(orderItem);
+        }
+        orderRepository.save(order);
+
+        // 장바구니 비우기
+        cartService.deleteAll(loginId);
+
+        // 총 구매금액 계산 후 자동 등급 업데이트
+        List<Order> allOrders = orderRepository.findByLoginIdOrderByCreatedDesc(loginId);
+        int totalAmount = allOrders.stream()
+                .filter(o -> !"취소".equals(o.getStatus()))
+                .mapToInt(Order::getAmount)
+                .sum();
+        memberService.updateGradeByAmount(loginId, totalAmount);
+
+        return order;
     }
 
-    // 주문 상세 조회
     @Override
-    public OrderRead find(Integer id, Integer memberId) {
-        Optional<OrderEntity> orderOptional = orderRepository.findByIdAndMemberId(id, memberId); // ✅ Order -> OrderEntity, orderItemRepository -> orderRepository 수정
-
-        if (orderOptional.isPresent()) {
-            OrderRead order = orderOptional.get().toRead();
-
-            List<OrderItemEntity> orderItems = orderItemService.findAll(order.getId()); // ✅ OrderItem -> OrderItemEntity 수정
-
-            List<Integer> orderItemIds = orderItems.stream().map(OrderItemEntity::getItemId).toList(); // ✅ orderItem::getItemId -> OrderItemEntity::getItemId 수정
-
-            List<ItemRead> items = itemService.findAll(orderItemIds);
-
-            order.setItems(items);
-
-            return order;
-        }
-        return null;
+    public List<Order> findAll(String loginId) {
+        return orderRepository.findByLoginIdOrderByCreatedDesc(loginId);
     }
 
-    // 주문 저장
     @Override
-    @Transactional
-    public void order(OrderRequest orderReq, Integer memberId) {
-        List<ItemRead> items = itemService.findAll(orderReq.getItemIds()); // ✅ orderReq.getItemIds()로 수정 (orderReq, getItemIds() 오류)
+    public List<Order> findAll() {
+        return orderRepository.findAllByOrderByCreatedDesc();
+    }
 
-        long amount = 0L;
-        for (ItemRead item : items) {
-            amount += item.getPrice() - item.getPrice().longValue() * item.getDiscountPer() / 100;
+    // 주문 삭제 (관리자)
+    @Override
+    public void delete(Integer id) {
+        orderRepository.deleteById(id);
+    }
+
+    @Override
+    public void updateStatus(Integer id, String status) {
+        Order order = orderRepository.findById(id).orElseThrow();
+        String prevStatus = order.getStatus();
+        order.updateStatus(status);
+        orderRepository.save(order);
+
+        // 배송완료 시 재고 차감
+        if ("배송완료".equals(status) && !"배송완료".equals(prevStatus)) {
+            for (OrderItem item : order.getOrderItems()) {
+                Item dbItem = itemRepository.findById(item.getItemId()).orElse(null);
+                if (dbItem != null) {
+                    int newStock = Math.max(0, dbItem.getStock() - item.getQuantity());
+                    dbItem.updateStock(newStock);
+                    itemRepository.save(dbItem);
+                }
+            }
         }
 
-        orderReq.setAmount(amount);
+        // 취소 시 재고 복구 (배송완료였던 경우만)
+        if ("취소".equals(status) && "배송완료".equals(prevStatus)) {
+            for (OrderItem item : order.getOrderItems()) {
+                Item dbItem = itemRepository.findById(item.getItemId()).orElse(null);
+                if (dbItem != null) {
+                    dbItem.updateStock(dbItem.getStock() + item.getQuantity());
+                    itemRepository.save(dbItem);
+                }
+            }
+        }
 
-        OrderEntity order = orderRepository.save(orderReq.toEntity(memberId)); // ✅ Order -> OrderEntity, 대문자 OrderRepository -> orderRepository 수정
-
-        List<OrderItemEntity> newOrderItems = new ArrayList<>(); // ✅ OrderItem -> OrderItemEntity 수정
-
-        orderReq.getItemIds().forEach(itemId -> {
-            OrderItemEntity newOrderItem = new OrderItemEntity(order.getId(), itemId, 1); // ✅ OrderItem -> OrderItemEntity 수정
-            newOrderItems.add(newOrderItem);
-        }); // ✅ 괄호 오류 수정
-
-        orderItemService.saveAll(newOrderItems);
-
-        cartService.removeAll(order.getMemberId());
+        // 취소 시 등급 재계산
+        if ("취소".equals(status)) {
+            List<Order> allOrders = orderRepository.findByLoginIdOrderByCreatedDesc(order.getLoginId());
+            int totalAmount = allOrders.stream()
+                    .filter(o -> !"취소".equals(o.getStatus()))
+                    .mapToInt(Order::getAmount)
+                    .sum();
+            memberService.updateGradeByAmount(order.getLoginId(), totalAmount);
+        }
     }
 }

@@ -1,18 +1,13 @@
 package com.example.demo.order.service;
 
-import com.example.demo.order.dto.OrderRead;
-import com.example.demo.order.dto.OrderRequest;
-
+import com.example.demo.order.entity.Order;
 import java.util.List;
+import java.util.Map;
 
 public interface OrderService {
-
-    //주문 목록 조회
-    List<OrderRead> findAll(Integer memberId);
-
-    //주문 상세 조회
-    OrderRead find(Integer id, Integer memberId);
-
-    //주문 내역 저장
-    void order(OrderRequest orderReq, Integer memberId);
+    Order save(String loginId, String name, String address, String payment, String cardNumber, Integer amount, List<Map<String, Object>> items);
+    List<Order> findAll(String loginId);
+    List<Order> findAll();
+    void updateStatus(Integer id, String status);
+    void delete(Integer id); // 주문 삭제 (관리자)
 }
