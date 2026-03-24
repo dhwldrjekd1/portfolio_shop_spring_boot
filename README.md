@@ -6,7 +6,7 @@
 
 ---
 
-## 📌 프로젝트 개요
+## 프로젝트 개요
 
 | 항목 | 내용 |
 |------|------|
@@ -19,7 +19,7 @@
 
 ---
 
-## 🛠️ 기술 스택
+## 기술 스택
 
 | 구분 | 기술 |
 |------|------|
@@ -32,7 +32,7 @@
 
 ---
 
-## 📁 프로젝트 구조
+## 프로젝트 구조
 
 ```
 src/main/java/com/example/demo/
@@ -204,4 +204,4 @@ java -jar /root/shop-0.0.1-SNAPSHOT.jar &
 
 | 구분 | 링크 |
 |------|------|
-| Frontend | [portfolio_shop](https://github.com/dhwldrjekd1/portfolio_shop) |
+| Frontend | [portfolio_shop_spring_boot](https://github.com/dhwldrjekd1/portfolio_shop_spring_boot) |
