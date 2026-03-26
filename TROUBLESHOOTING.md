@@ -1,108 +1,138 @@
-# Gentle Monster Inspired 쇼핑몰 포트폴리오
+#  Gentle Monster — Inspired Commerce Platform
+
+> 젠틀몬스터를 디자인 레퍼런스로 참고하여 직접 설계·구현한 풀스택 프로젝트  
+> A full-stack platform inspired by Gentle Monster, designed and built from scratch.
 
 ---
 
-## 1. 프로젝트 개요
+## Project Overview
 
 | 항목 | 내용 |
 |------|------|
-| 프로젝트명 | Gentle Monster 클론 쇼핑몰 |
-| 개발 기간 | 2026.03 |
-| 개발자    | 최동윤 |
-| 개발 인원 | 1인 (풀스택) |
-| 기술 스택 | Vue.js 3, Spring Boot 3.2, PostgreSQL, Docker |
-| 배포 환경 | Docker Ubuntu 컨테이너 |
+| **프로젝트명** | Gentle Monster Inspired Commerce |
+| **개발 기간** | 2026.03 (1인 개발) |
+| **개발 형태** | 풀스택 1인 프로젝트 |
+| **개발자**    | 최동윤 |
+| **목표** | 실제 커머스 비즈니스 로직 설계 + Spring Security 기반 보안 구조 구현 |
+
+<br>
 
 ---
 
-## 2. 기술 스택
+## Tech Stack
 
 ### Frontend
-- Vue.js 3 (Composition API, script setup)
-- Pinia (전역 상태 관리)
-- Vue Router 4 (SPA 라우팅, 라우터 가드)
-- Vite (빌드 도구)
-- Bootstrap 5 / Bootstrap Icons
+| 기술 | 선택 이유 |
+|------|----------|
+| **Vue.js 3** (Composition API) | `script setup` 기반 컴포넌트 설계로 관심사 분리 및 재사용성 확보 |
+| **Pinia** | 전역 상태 중앙화, 장바구니·로그인 상태 SPA 전반에서 일관 관리 |
+| **Vue Router 4** | SPA 라우팅 및 Navigation Guard를 통한 비로그인·비관리자 접근 차단 |
+| **Vite** | ESM 기반 빠른 빌드 환경으로 개발 생산성 향상 |
 
 ### Backend
-- Spring Boot 3.2.0 (Java 21)
-- Spring Security (BCrypt 암호화, SecurityFilterChain)
-- Spring Data JPA + Hibernate
-- PostgreSQL 14
-- Lombok, Swagger (SpringDoc OpenAPI 3)
+| 기술 | 선택 이유 |
+|------|----------|
+| **Spring Boot 3.2 / Java 21** | 안정적인 RESTful API 서버 구축 |
+| **Spring Security** | BCrypt 암호화 + SecurityFilterChain 기반 보안 레이어 분리 |
+| **Spring Data JPA (Hibernate)** | 객체-관계 매핑을 통한 도메인 중심 개발 및 데이터 정합성 관리 |
+| **PostgreSQL** | 트랜잭션 보장이 필요한 커머스 도메인에 적합한 RDBMS |
 
-### Infra
-- Docker (Ubuntu 컨테이너)
-- PostgreSQL (Docker 내부 실행)
+### Infrastructure
+| 기술 | 역할 |
+|------|------|
+| **Docker** | 앱 / DB 컨테이너화로 환경 일관성 보장 |
+| **Docker Hub** | 이미지 배포 및 다른 환경에서의 재현 가능한 실행 환경 제공 |
+| **Ubuntu (Linux)** | JAR 실행 및 프로세스 관리 |
 
----
-
-## 3. 구현 기능 목록
-
-### 회원 기능
-- 회원가입 / 로그인 / 로그아웃
-- BCrypt 비밀번호 암호화
-- 마이페이지 (회원정보 조회/수정, 회원탈퇴)
-- 비밀번호 찾기 (임시 비밀번호 발급)
-- 구매금액 기반 자동 등급 업데이트
-  - 브론즈(0~50만원) / 실버(50~100만원) / 골드(100~150만원) / 플래티넘(150만원+)
-- 강퇴 회원 로그인 차단
-
-### 상품 기능
-- 상품 목록 (카테고리/뱃지/가격/평점 필터, 정렬)
-- 상품 상세 (이미지 갤러리, 색상/사이즈 선택)
-- 할인가 표시 (원가 취소선 + 할인가 + %OFF, 백원단위 반올림)
-- DB 기반 재고/할인율/가격 실시간 반영
-- 상품별 DB 평균 별점 표시
-
-### 장바구니
-- 장바구니 담기 (색상/사이즈 포함)
-- 수량 변경 / 개별 삭제 / 전체 삭제
-- 새로고침 후에도 유지 (DB 기반)
-- 비로그인 시 로그인 모달 표시
-
-### 주문/결제
-- 3단계 결제 프로세스
-- 배송 메모 (선택형 + 직접 입력)
-- 주문완료 페이지 (주문 상품 이미지 표시)
-- 주문 취소 (주문접수/배송중 상태만 가능)
-- 배송완료 시 재고 자동 차감 + 등급 재계산
-- 주문 취소 시 재고 복구 + 등급 재계산
-
-### 리뷰
-- 배송완료 주문 확인 후 리뷰 작성 가능
-- 동일 상품 중복 리뷰 방지
-- 리뷰 수정 / 삭제
-- DB 기반 평균 별점 상품 페이지 반영
-
-### 고객지원
-- 공지사항: 관리자 등록/수정/삭제
-- QnA: 카테고리 필터, 관리자 등록/수정/삭제
-- 고객문의: 일반회원 등록/수정/삭제, 관리자 답변 등록
-
-### 커뮤니티
-- 게시글 등록/수정/삭제
-- 댓글 등록/수정/삭제
-- 검색 (제목/내용/작성자)
-
-### 관리자 대시보드 (6개 탭)
-- 회원 목록: 검색, 등급 변경, 권한 변경, 강퇴
-- 주문 관리: 검색, 기간 필터, 페이징(10건), 상태 변경, 삭제
-- 재고 관리: 재고/할인율 수정
-- 판매 관리: 매출 통계 카드, 상품별 판매량, 기간 필터
-- 상품 관리: 등록/수정/삭제, 이미지 업로드(파일/URL), 세부정보 수정
-- 리뷰 관리: 목록, 수정, 삭제
+<br>
 
 ---
 
-## 4. 트러블슈팅
+## Architecture
 
-### 문제 1: 포트 8086 중복 실행 오류
-**상황:** Docker 컨테이너에서 JAR를 재실행할 때 기존 프로세스가 종료되지 않아 포트 충돌 발생
+```
+┌─────────────────────────────────────────────────┐
+│                   Client (Browser)              │
+│         Vue 3 + Pinia + Vue Router 4            │
+└──────────────────────┬──────────────────────────┘
+                       │ REST API (HTTP/JSON)
+┌──────────────────────▼──────────────────────────┐
+│              Spring Boot 3.2 Server             │
+│  ┌──────────────────┐  ┌─────────────────────┐  │
+│  │  Security Filter │  │   Business Logic    │  │
+│  │  Chain (BCrypt)  │  │  Order/Member/Item  │  │
+│  └──────────────────┘  └──────────┬──────────┘  │
+│                                   │ JPA/Hibernate│
+└───────────────────────────────────┼─────────────┘
+                                    │
+┌───────────────────────────────────▼─────────────┐
+│              PostgreSQL (Docker)                │
+│            11 Tables — 커머스 전체 도메인        │
+└─────────────────────────────────────────────────┘
+```
 
-**원인:** `java -jar` 실행 시 기존 프로세스가 백그라운드에서 계속 동작
+<br>
 
-**해결:**
+---
+
+## Key Business Logic
+
+### 1. 회원 등급 자동화 시스템
+
+배송완료 주문 누적 금액에 따라 등급을 자동 산정하며, 주문 취소 시 재계산으로 정합성을 보장합니다.
+
+```
+브론즈 :   0 ~  50만원
+실버   :  50 ~ 100만원
+골드   : 100 ~ 150만원
+플래티넘: 150만원 이상
+```
+
+- 배송완료 확정 시점에 등급 반영 → 어뷰징 방지
+- 주문 취소 시 금액 차감 후 등급 재계산 → 데이터 정합성 보장
+- 관리자가 수동으로 등급 변경 가능
+
+---
+
+### 2. 주문 / 재고 파이프라인
+
+```
+[주문 생성] → sessionStorage 스냅샷 저장 → 장바구니 비우기
+      ↓
+[배송완료 확정] → 재고 차감 → 등급 업데이트
+      ↓
+[주문 취소] → 재고 복구 → 등급 재계산
+```
+
+- 배송완료 시점에만 재고 차감 → 재고 오차 방지
+- 취소 시 재고 즉시 복구
+- `order_items`에 주문 시점 상품명/색상/사이즈 스냅샷 저장 → 상품 삭제 후에도 주문 내역 유지
+
+---
+
+### 3. 관리자 대시보드 (6개 탭)
+
+| 탭 | 기능 |
+|----|------|
+| 회원 관리 | 검색, 등급 변경, 권한 변경, 강퇴 |
+| 주문 관리 | 검색, 기간 필터, 페이징(10건), 상태 변경, 삭제 |
+| 재고 관리 | 상품별 재고/할인율 수정 |
+| 판매 관리 | 매출 통계, 상품별 판매량, 기간 필터 |
+| 상품 관리 | 등록/수정/삭제, 이미지 업로드(파일/URL), 세부정보 수정 |
+| 리뷰 관리 | 전체 리뷰 목록, 수정, 삭제 |
+
+<br>
+
+---
+
+## Engineering & Troubleshooting
+
+### [Case 1] Docker 컨테이너 포트 충돌 (좀비 프로세스)
+
+**문제** : JAR 재배포 시 `Port 8086 was already in use` 오류  
+**원인** : 기존 Java 프로세스가 백그라운드에서 계속 실행 중 → 포트 점유 지속  
+**해결** : `pkill` + `sleep` 조합으로 기존 프로세스 Graceful Shutdown 후 재시작
+
 ```bash
 pkill -f shop
 sleep 2
@@ -111,209 +141,276 @@ java -jar shop-0.0.1-SNAPSHOT.jar &
 
 ---
 
-### 문제 2: 이미지 업로드 후 경로 NOT NULL 오류
-**상황:** 관리자 상품 등록 시 이미지 없이 등록하면 DB에서 NOT NULL 제약 조건 위반 오류 발생
+### [Case 2] DB NOT NULL 제약 조건 오류 (이미지 없는 상품 등록)
 
-**원인:** `items` 테이블의 `image_path` 컬럼에 NOT NULL 제약 조건이 걸려 있었음
+**문제** : 이미지 없이 상품 등록 시 `null value in column "image_path" violates not-null constraint`  
+**원인** : `items` 테이블의 `image_path` 컬럼에 NOT NULL 제약 조건  
+**해결** : 컬럼 제약 조건 제거 + 엔티티 nullable 처리
 
-**해결:**
 ```sql
 ALTER TABLE items ALTER COLUMN image_path DROP NOT NULL;
 ```
-`Item.java` 엔티티에서도 `nullable = true` 처리
 
 ---
 
-### 문제 3: 상품 등록 시 duplicate key 오류
-**상황:** 관리자가 상품을 등록할 때 `duplicate key value violates unique constraint "items_pkey"` 오류 발생
+### [Case 3] JPA Entity ID 생성 전략 충돌
 
-**원인:** `Item.java`의 `@GeneratedValue` 전략이 `SEQUENCE`로 설정되어 기존 수동 입력된 데이터와 시퀀스가 불일치
+**문제** : 신규 상품 등록 시 `duplicate key value violates unique constraint` 발생  
+**원인** : 초기 데이터를 수동 삽입하면서 DB 시퀀스 값과 실제 PK 불일치  
+**해결** : `SEQUENCE` → `IDENTITY` 전략으로 변경, ID 생성 권한을 DB에 완전히 위임
 
-**해결:**
 ```java
+// Before — 시퀀스 전략: 수동 삽입 데이터와 충돌
+@GeneratedValue(strategy = GenerationType.SEQUENCE)
+
+// After — DB AUTO_INCREMENT에 위임, 충돌 원천 차단
 @GeneratedValue(strategy = GenerationType.IDENTITY)
 ```
-`IDENTITY` 전략으로 변경하여 DB의 AUTO INCREMENT에 위임
 
 ---
 
-### 문제 4: Spring Security 적용 후 모든 API 401 오류
-**상황:** `spring-boot-starter-security` 의존성 추가 후 로그인, 상품 조회 등 모든 API 호출 시 401 오류 발생
+### [Case 4] Spring Security 적용 후 전체 API 401 오류
 
-**원인:** Spring Security 기본 설정이 모든 요청에 인증을 요구함
+**문제** : `spring-boot-starter-security` 추가 후 공개 API 포함 모든 요청 401 반환  
+**원인** : Security 기본 설정이 모든 요청에 인증 요구  
+**해결** : `requestMatchers` 화이트리스트 설정으로 API별 접근 권한 분리
 
-**해결:**
 ```java
-// SecurityConfig.java에 permitAll() 설정 추가
-.requestMatchers("/api/member/**").permitAll()
-.requestMatchers("/api/item/**").permitAll()
-// ... 각 API 경로별 허용 설정
+.authorizeHttpRequests(auth -> auth
+    .requestMatchers("/api/member/**").permitAll()
+    .requestMatchers("/api/item/**").permitAll()
+    .requestMatchers("/api/order/**").permitAll()
+    // ...
+    .anyRequest().authenticated()
+)
 ```
 
 ---
 
-### 문제 5: Spring Security 기본 비밀번호 자동 생성 경고
-**상황:** Spring Security 적용 후 `Using generated security password: xxxxxxxx` 경고 발생, 이로 인해 로그인 API 400 오류
+### [Case 5] Spring Security 기본 비밀번호 자동 생성으로 인한 로그인 400 오류
 
-**원인:** 기본 `UserDetailsService`가 활성화되어 랜덤 비밀번호를 생성하고 HTTP Basic 인증을 요구
+**문제** : Security 적용 후 `Using generated security password` 경고 발생, 로그인 API 400 오류  
+**원인** : 기본 `UserDetailsService`가 활성화되어 랜덤 비밀번호를 생성하고 HTTP Basic 인증을 요구  
+**해결** : 빈 `InMemoryUserDetailsManager` 등록으로 기본 비밀번호 생성 방지
 
-**해결:**
 ```java
-// 빈 UserDetailsService 등록으로 기본 비밀번호 생성 방지
 @Bean
 public UserDetailsService userDetailsService() {
-    return new InMemoryUserDetailsManager();
+    return new InMemoryUserDetailsManager(); // 빈 매니저 등록
 }
 ```
-```yaml
-# application.yml에도 추가
-spring:
-  security:
-    user:
-      name: none
-      password: none
+
+---
+
+### [Case 6] 리뷰 작성 완료 후에도 작성 폼이 계속 표시됨
+
+**문제** : 리뷰를 이미 작성했음에도 상품 상세 페이지에서 리뷰 작성 폼이 계속 표시됨  
+**원인** : `canWriteReview` computed 조건에서 `hasReviewed` 체크 누락  
+**해결** : 구매 여부와 리뷰 작성 여부를 동시에 검사하는 조건으로 수정
+
+```
+// Before
+canWriteReview = hasPurchased
+
+// After — 구매했고 아직 리뷰 안 쓴 경우만 작성 가능
+canWriteReview = hasPurchased && !hasReviewed
 ```
 
 ---
 
-### 문제 6: 배송완료 후에도 리뷰 작성 폼이 계속 표시됨
-**상황:** 리뷰를 이미 작성했음에도 불구하고 상품 상세 페이지에서 리뷰 작성 폼이 계속 표시됨
+### [Case 7] products.json 하드코딩 리뷰와 DB 리뷰 혼재
 
-**원인:** `hasPurchased`와 `hasReviewed` 체크 API 연동 로직에서 `canWriteReview` computed 조건이 잘못 설정됨
+**문제** : 상품 상세 페이지에 DB 리뷰와 정적 파일 리뷰가 동시에 표시됨  
+**원인** : Pinia store가 `products.json`의 `reviews` 필드를 그대로 로드하고 있었음  
+**해결** : `products.json`에서 `reviews`, `rating`, `reviewCount` 필드 완전 제거, DB API로만 리뷰 조회
 
-**해결:**
-```js
-// hasPurchased: 배송완료 주문 있음
-// hasReviewed: 이미 리뷰 작성함
-const canWriteReview = computed(() => hasPurchased.value && !hasReviewed.value)
+```
+products.json 정리 → DB API(/api/review/item/{id})로 리뷰 단독 조회
+→ 리뷰 중복 표시 해결 + 실시간 평균 별점 정확도 향상
 ```
 
 ---
 
-### 문제 7: products.json 하드코딩 리뷰가 DB와 혼재
-**상황:** 상품 상세 페이지에 DB 리뷰와 products.json의 하드코딩 리뷰가 동시에 표시됨
+### [Case 8] 관리자 신규 등록 상품이 상품 목록에 미표시
 
-**원인:** store.js에서 `reviews` state가 products.json 데이터를 로드하고 있었음
+**문제** : 관리자가 신규 상품을 등록해도 상품 목록 페이지에 표시되지 않음  
+**원인** : `store.js`의 `fetchData()`가 `products.json`에 있는 상품만 처리하고, DB에만 있는 신규 상품은 무시  
+**해결** : DB 전체 상품과 JSON 상품을 비교하여 DB에만 있는 상품을 별도로 합치는 로직 추가
 
-**해결:**
-- products.json에서 `reviews`, `rating`, `reviewCount` 필드 완전 제거
-- `ProductDetailView.vue`에서 DB API(`/api/review/item/{id}`)로 리뷰 직접 조회
-- store.js에서 `getReviewsByProductId` 함수 및 `reviews` state 제거
-
----
-
-### 문제 8: 관리자 신규 등록 상품이 상품 페이지에 미표시
-**상황:** 관리자가 신규 상품을 등록해도 상품 목록 페이지에 표시되지 않음
-
-**원인:** `store.js`의 `fetchData()`가 `products.json`에 있는 상품만 표시하고 DB에만 있는 신규 상품은 무시
-
-**해결:**
-```js
-// DB에만 있는 신규 등록 상품 별도 처리
-const jsonIds = data.products.map(p => Number(p.id))
-const dbOnly = items.filter(i => !jsonIds.includes(Number(i.id))).map(i => ({
-  id: Number(i.id),
-  name: i.name,
-  category: i.category || 'all',
-  // ... 기본값 설정
-}))
-products.value = [...jsonProducts, ...dbOnly]
+```
+jsonIds = products.json의 ID 목록
+dbOnly  = DB 상품 중 jsonIds에 없는 것 → 신규 등록 상품
+products = [...jsonProducts, ...dbOnly]
 ```
 
 ---
 
-### 문제 9: 주문완료 페이지에 상품 이미지 미표시
-**상황:** 주문 완료 후 OrderCompleteView에 상품 이미지가 표시되지 않음
+### [Case 9] 결제 완료 후 주문 상품 이미지 유실
 
-**원인:** `placeOrder()` 실행 시 `clearCart()`로 장바구니가 비워진 후 상품 정보에 접근 불가
+**문제** : 주문완료 페이지에서 주문 상품 이미지/정보가 표시되지 않음  
+**원인** : `clearCart()` 실행으로 Pinia 스토어 초기화 후 페이지 이동 → 상품 데이터 접근 불가  
+**해결** : `clearCart()` 호출 전에 핵심 데이터를 `sessionStorage`에 캐싱, 주문완료 페이지에서 복원 후 삭제
 
-**해결:** `clearCart()` 호출 전에 `sessionStorage`에 주문 정보 저장
-```js
-// clearCart() 전에 sessionStorage에 저장
-const orderItems = store.cart.map(item => {
-  const product = store.getProductById(item.itemId)
-  return { name: product?.name, image: product?.images?.[0], ... }
-})
-sessionStorage.setItem('last_order_items', JSON.stringify(orderItems))
-// OrderCompleteView에서 sessionStorage에서 읽어서 표시
+```
+결제 완료 직전
+  → sessionStorage에 주문 상품 정보 저장   ← 핵심 포인트
+  → clearCart() 실행
+  → 주문완료 페이지 이동
+  → sessionStorage에서 데이터 복원하여 표시
+  → sessionStorage 삭제
 ```
 
 ---
 
-### 문제 10: 상품 카테고리 필터 - 전체 클릭 시 선글라스로 이동
-**상황:** 헤더의 "전체" 메뉴 클릭 시 전체 상품이 표시되어야 하는데 선글라스 카테고리로 이동됨
+### [Case 10] 상품 카테고리 전체 클릭 시 선글라스로 이동
 
-**원인:** `ProductView.vue`의 `watch`가 이전 쿼리 파라미터(`category=sunglasses`)를 유지하고 있었음
+**문제** : 헤더 "전체" 메뉴 클릭 시 전체 상품이 아닌 선글라스 카테고리로 이동  
+**원인** : Vue Router `watch`가 쿼리 파라미터 없을 때 이전 상태(`category=sunglasses`)를 그대로 유지  
+**해결** : 쿼리 파라미터 없을 때 `all`로 명시적 초기화
 
-**해결:**
-```js
-watch(() => route.query, (q) => {
-  // category 쿼리 없으면 'all'로 초기화
-  filters.value.category = q.category || 'all'
-})
 ```
+// Before — 쿼리 없으면 기존 값 유지
+filters.value.category = q.category
+
+// After — 쿼리 없으면 'all'로 명시 초기화
+filters.value.category = q.category || 'all'
+```
+
+<br>
 
 ---
 
-## 5. DB 테이블 구조
+## Database Schema
 
-| 테이블 | 설명 | 주요 컬럼 |
-|--------|------|-----------|
-| items | 상품 | id, name, image_path, price, discount_rate, stock, category, badge, details_json |
-| members | 회원 | id, login_id, login_pw(BCrypt), role, grade |
-| carts | 장바구니 | id, login_id, item_id, quantity, color, size |
-| orders | 주문 | id, login_id, address, payment, amount, status |
-| order_items | 주문 상품 | id, order_id, item_id, item_name, color, size, quantity |
-| reviews | 리뷰 | id, item_id, login_id, content, rating |
-| notices | 공지사항 | id, title, content, important |
-| qnas | QnA | id, category, question, answer |
-| inquiries | 고객문의 | id, title, content, login_id, status, reply |
-| boards | 커뮤니티 | id, title, content, login_id |
-| comments | 댓글 | id, content, login_id, board_id |
+총 **11개 테이블**로 구성:
 
----
+| 테이블 | 주요 설계 포인트 |
+|--------|----------------|
+| `members` | BCrypt 암호화, role(user/admin/banned), grade(브론즈~플래티넘) |
+| `items` | 실시간 재고, 할인율, badge, category, details_json(세부정보 JSON) |
+| `orders` | 상태(주문접수/배송중/배송완료/취소) |
+| `order_items` | orders : order_items = 1:N, 주문 시점 상품명/색상/사이즈 스냅샷 저장 |
+| `reviews` | 배송완료 주문 확인 후 작성 가능, 별점(1~5) |
+| `carts` | 로그인 기반 DB 저장 (새로고침 후에도 유지) |
+| `notices` | 중요 공지 구분 |
+| `qnas` | 카테고리별 분류 |
+| `inquiries` | 1:1 문의, 관리자 답변 포함 |
+| `boards` | 커뮤니티 게시판 |
+| `comments` | 게시글 댓글 |
 
-## 6. 아키텍처
-
-```
-[브라우저]
-    ↓ HTTP
-[Vue.js SPA - /web03/]
-    ↓ REST API
-[Spring Boot (8086)]
-    ↓ JPA
-[PostgreSQL]
-
-[Spring Security FilterChain]
-- CSRF 비활성화
-- BCrypt 암호화
-- API 접근 권한 제어
-- 기본 UserDetailsService 비활성화
-```
+<br>
 
 ---
 
-## 7. 배포 구조
+## Getting Started
 
-```
-Windows (개발)
-├── Vue.js 개발 → npm run build
-├── dist/ → Spring Boot static/web03/
-└── gradlew clean build → JAR
+### Docker Hub에서 바로 실행 (권장)
 
-Docker (ubuntu01 컨테이너)
-├── PostgreSQL (5432)
-└── Spring Boot JAR (8086)
-    └── /root/uploads/ (업로드 이미지)
+```bash
+# 이미지 받기
+docker pull dongyun12/shop-app:latest
+
+# 컨테이너 실행
+docker run -it --name ubuntu01 -p 8086:8086 dongyun12/shop-app:latest bash
+
+# 컨테이너 내부에서 실행
+service postgresql start
+cd /root
+java -jar shop-0.0.1-SNAPSHOT.jar &
 ```
+
+접속 URL: `http://localhost:8086/web03/`
 
 ---
 
-## 8. 향후 개선 사항
+### 로컬 빌드 방법
 
-- [ ] JWT 토큰 기반 인증 추가
-- [ ] 실제 PG사 결제 연동 (카카오페이, 토스페이먼츠)
-- [ ] AWS S3 이미지 업로드
-- [ ] Redis 세션 캐싱
-- [ ] CI/CD 파이프라인 구축
-- [ ] 반응형 모바일 최적화
+**Prerequisites**
+- Java 21+
+- Node.js 20+
+- Docker
+
+**1. Vue 빌드**
+```bash
+cd vue-shop
+npm install
+npm run build
+```
+
+**2. 빌드 결과물 복사 (Windows)**
+```bash
+xcopy /E /Y dist\* ..\shop\src\main\resources\static\web03\
+```
+
+**3. Spring Boot 빌드**
+```bash
+cd shop
+gradlew clean build -x test
+```
+
+**4. Docker 컨테이너에 배포**
+```bash
+docker cp build/libs/shop-0.0.1-SNAPSHOT.jar ubuntu01:/root/
+docker exec -it ubuntu01 bash
+pkill -f shop && sleep 2
+java -jar /root/shop-0.0.1-SNAPSHOT.jar &
+```
+
+<br>
+
+---
+
+## Project Structure
+
+```
+Frontend (Vue.js 3)
+└── src/
+    ├── views/          # 페이지 컴포넌트 (Home, Product, Cart, Checkout, MyPage, Admin 등)
+    ├── components/     # 공통 컴포넌트 (AppHeader, ProductCard)
+    ├── store/          # Pinia 전역 상태 (상품, 장바구니, 회원)
+    └── router/         # Vue Router (Navigation Guard 포함)
+
+Backend (Spring Boot 3.2)
+└── src/main/java/com/example/demo/
+    ├── member/         # 회원 도메인
+    ├── item/           # 상품 도메인
+    ├── cart/           # 장바구니 도메인
+    ├── order/          # 주문 도메인
+    ├── review/         # 리뷰 도메인
+    ├── board/          # 커뮤니티 도메인
+    ├── notice/         # 공지사항 도메인
+    ├── qna/            # QnA 도메인
+    ├── inquiry/        # 고객문의 도메인
+    └── config/         # Security, Web, JPA, SPA 설정
+```
+
+<br>
+
+---
+
+## TODO
+
+- JWT Refresh Token 도입 (현재 BCrypt + Security 기반)
+- Redis 캐싱 레이어 추가 (상품 목록 조회 성능 개선)
+- CI/CD 파이프라인 구성 (GitHub Actions → Docker Hub → 자동 배포)
+- 단위 테스트 커버리지 확보 (JUnit5 + Mockito)
+- 실제 PG사 결제 연동 (토스페이먼츠)
+
+<br>
+
+---
+
+## Related Repository
+
+| 구분 | 링크 |
+|------|------|
+| Frontend | [portfolio_shop](https://github.com/dhwldrjekd1/portfolio_shop) |
+| Backend | [portfolio_shop_spring_boot](https://github.com/dhwldrjekd1/portfolio_shop_spring_boot) |
+
+<br>
+
+---
+
+<p align="center">
+  <i>Inspired by Gentle Monster — Less, but better.</i>
+</p>
