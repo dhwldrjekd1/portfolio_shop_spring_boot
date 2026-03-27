@@ -276,6 +276,76 @@ filters.value.category = q.category
 filters.value.category = q.category || 'all'
 ```
 
+---
+
+### [Case 11] 토스페이먼츠 SDK `TossPayments is not defined` 오류
+
+**문제** : 토스페이 결제 버튼 클릭 시 `TossPayments is not a function` 오류 발생  
+**원인** : Vue 컴포넌트 내에서 전역 객체 `TossPayments`를 직접 참조 → 빌드 환경에서 인식 불가  
+**해결** : `window.TossPayments`로 명시적 전역 접근
+
+```js
+// Before — 빌드 후 인식 불가
+const tossPayments = TossPayments(clientKey)
+
+// After — window 전역 객체로 명시 접근
+const tossPayments = window.TossPayments(clientKey)
+```
+
+---
+
+### [Case 12] 토스페이먼츠 v2 API `requestPayment is not a function` 오류
+
+**문제** : `window.TossPayments` 호출 후 `requestPayment is not a function` 오류 발생  
+**원인** : 토스페이 SDK v2에서 API 구조 변경 — v1 방식(`requestPayment("카드", {...})`)이 v2에서 제거됨  
+**해결** : v2 방식으로 변경 — `payment()` 객체 생성 후 `requestPayment()` 호출
+
+```js
+// Before — v1 방식 (v2에서 동작 안 함)
+const tossPayments = window.TossPayments(clientKey)
+await tossPayments.requestPayment("카드", { ... })
+
+// After — v2 방식
+const tossPayments = await window.TossPayments(clientKey)
+const payment = tossPayments.payment({
+  customerKey: store.user.loginId
+})
+await payment.requestPayment({
+  method: "CARD",
+  amount: { currency: "KRW", value: totalWithShipping.value },
+  orderId,
+  orderName,
+  successUrl: window.location.origin + "/web03/payment/success",
+  failUrl:    window.location.origin + "/web03/payment/fail",
+})
+```
+
+---
+
+### [Case 13] API 키 GitHub 노출 방지 — `application.yml` gitignore 처리
+
+**문제** : 토스페이 API 키가 포함된 `application.yml`이 GitHub에 그대로 노출될 위험  
+**원인** : `.gitignore` 미설정으로 민감 정보가 원격 저장소에 push됨  
+**해결** : `.gitignore`에 `application.yml` 추가 + `git rm --cached`로 원격에서 제거
+
+```bash
+# .gitignore에 추가
+echo "shop_spring_boot/shop/src/main/resources/application.yml" >> .gitignore
+
+# 원격 저장소에서 캐시 제거 (로컬 파일은 유지)
+git rm --cached shop_spring_boot/shop/src/main/resources/application.yml
+git add .
+git commit -m "chore: application.yml gitignore 처리 (키 보안)"
+git push origin main
+```
+
+```yaml
+# application.yml — 코드에 직접 하드코딩 대신 설정 파일에서 관리
+toss:
+  client-key: ${TOSS_CLIENT_KEY}
+  secret-key:  ${TOSS_SECRET_KEY}
+```
+
 <br>
 
 ---
@@ -394,7 +464,7 @@ Backend (Spring Boot 3.2)
 - Redis 캐싱 레이어 추가 (상품 목록 조회 성능 개선)
 - CI/CD 파이프라인 구성 (GitHub Actions → Docker Hub → 자동 배포)
 - 단위 테스트 커버리지 확보 (JUnit5 + Mockito)
-- 실제 PG사 결제 연동 (토스페이먼츠)
+- 실제PG사 결제 연동(토스페이먼츠)
 
 <br>
 
