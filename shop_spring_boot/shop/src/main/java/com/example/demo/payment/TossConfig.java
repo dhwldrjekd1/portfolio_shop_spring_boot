@@ -1,4 +1,4 @@
-package com.example.demo.config.toss;
+package com.example.demo.payment;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;

@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/board/**").permitAll()
                         .requestMatchers("/api/inquiry/**").permitAll()
                         .requestMatchers("/api/comment/**").permitAll()
+                        .requestMatchers("/api/payment/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
