@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/item/**").permitAll()
                         .requestMatchers("/api/review/**").permitAll()
                         .requestMatchers("/api/cart/**").permitAll()
+                        .requestMatchers("/api/wishlist/**").permitAll()
                         .requestMatchers("/api/order/**").permitAll()
                         .requestMatchers("/api/notice/**").permitAll()
                         .requestMatchers("/api/qna/**").permitAll()
