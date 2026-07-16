@@ -346,13 +346,39 @@ toss:
   secret-key:  ${TOSS_SECRET_KEY}
 ```
 
+---
+
+### [Case 14] 위시리스트 새로고침 시 초기화
+
+**문제** : 위시리스트에 상품을 담아도 새로고침하면 목록이 비워짐  
+**원인** : 위시리스트가 Pinia 스토어의 메모리 상태로만 존재 — DB 저장도, localStorage 저장도 없어 페이지가 새로 로드되면 상태가 초기화됨  
+**해결** : 장바구니와 동일한 구조로 `wishlists` 테이블 및 API(`WishlistController`/`WishlistService`/`WishlistRepository`)를 신설하고, 로그인 시 서버에서 위시리스트를 불러오도록 변경. `(login_id, item_id)` 유니크 제약으로 중복 담기 방지
+
+```java
+// Wishlist Entity — Cart와 동일한 패턴
+@Table(name = "wishlists", uniqueConstraints = @UniqueConstraint(columnNames = {"loginId", "itemId"}))
+public class Wishlist {
+    private Integer id;
+    private String loginId;
+    private Integer itemId;
+    private LocalDateTime created;
+}
+```
+
+```js
+// store/shop.js — 서버에는 itemId 목록만 저장, 화면 표시용 전체 상품 정보는 조인해서 구성
+const wishlistProducts = computed(() =>
+  wishlist.value.map(w => products.value.find(p => p.id === w.itemId)).filter(Boolean)
+)
+```
+
 <br>
 
 ---
 
 ## Database Schema
 
-총 **11개 테이블**로 구성:
+총 **12개 테이블**로 구성:
 
 | 테이블 | 주요 설계 포인트 |
 |--------|----------------|
@@ -362,6 +388,7 @@ toss:
 | `order_items` | orders : order_items = 1:N, 주문 시점 상품명/색상/사이즈 스냅샷 저장 |
 | `reviews` | 배송완료 주문 확인 후 작성 가능, 별점(1~5) |
 | `carts` | 로그인 기반 DB 저장 (새로고침 후에도 유지) |
+| `wishlists` | 로그인 기반 DB 저장, (login_id, item_id) 유니크 제약으로 중복 방지 |
 | `notices` | 중요 공지 구분 |
 | `qnas` | 카테고리별 분류 |
 | `inquiries` | 1:1 문의, 관리자 답변 포함 |
@@ -451,6 +478,7 @@ Backend (Spring Boot 3.2)
     ├── notice/         # 공지사항 도메인
     ├── qna/            # QnA 도메인
     ├── inquiry/        # 고객문의 도메인
+    ├── wishlist/       # 위시리스트 도메인
     └── config/         # Security, Web, JPA, SPA 설정
 ```
 
@@ -474,7 +502,7 @@ Backend (Spring Boot 3.2)
 
 | 구분 | 링크 |
 |------|------|
-| Frontend | [portfolio_shop](https://github.com/dhwldrjekd1/portfolio_shop) |
+| Frontend | [portfolio_shop_frontend](https://github.com/dhwldrjekd1/portfolio_shop_frontend) |
 | Backend | [portfolio_shop_spring_boot](https://github.com/dhwldrjekd1/portfolio_shop_spring_boot) |
 
 <br>

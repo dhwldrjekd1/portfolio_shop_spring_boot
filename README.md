@@ -43,6 +43,7 @@ src/main/java/com/example/demo/
 │   └── controller/MemberController.java
 ├── item/             # 상품 도메인
 ├── cart/             # 장바구니 도메인
+├── wishlist/         # 위시리스트 도메인
 ├── order/            # 주문 도메인
 ├── review/           # 리뷰 도메인
 ├── board/            # 커뮤니티 도메인
@@ -95,6 +96,13 @@ DELETE /api/cart/{id}            개별 삭제
 DELETE /api/cart/clear/{loginId} 전체 삭제
 ```
 
+### 위시리스트 API
+```
+GET    /api/wishlist/{loginId}          위시리스트 조회
+POST   /api/wishlist                    위시리스트 추가
+DELETE /api/wishlist/{loginId}/{itemId} 위시리스트 삭제
+```
+
 ### 주문 API
 ```
 GET  /api/order/{loginId}       회원 주문 목록
@@ -122,10 +130,11 @@ GET  /api/review/check/reviewed/{loginId}/{itemId}  리뷰 작성 확인
 ## DB 테이블
 
 ```sql
--- 11개 테이블
+-- 12개 테이블
 items        -- 상품 (badge, category, details_json 포함)
 members      -- 회원 (grade, role 포함)
 carts        -- 장바구니
+wishlists    -- 위시리스트 (loginId + itemId 유니크 제약)
 orders       -- 주문
 order_items  -- 주문 상품
 notices      -- 공지사항
@@ -148,6 +157,7 @@ http
     .requestMatchers("/api/item/**").permitAll()
     .requestMatchers("/api/review/**").permitAll()
     .requestMatchers("/api/cart/**").permitAll()
+    .requestMatchers("/api/wishlist/**").permitAll()
     .requestMatchers("/api/order/**").permitAll()
     // ... 각 API 허용
     .anyRequest().authenticated()
@@ -204,4 +214,4 @@ java -jar /root/shop-0.0.1-SNAPSHOT.jar &
 
 | 구분 | 링크 |
 |------|------|
-| Frontend | [portfolio_shop_spring_boot](https://github.com/dhwldrjekd1/portfolio_shop_spring_boot) |
+| Frontend | [portfolio_shop_frontend](https://github.com/dhwldrjekd1/portfolio_shop_frontend) |
