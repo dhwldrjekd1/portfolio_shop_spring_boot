@@ -69,7 +69,7 @@ POST /api/member/login        로그인 (BCrypt 검증)
 GET  /api/member/info/{id}    회원정보 조회
 PUT  /api/member/update/{id}  회원정보 수정
 DELETE /api/member/delete/{id} 회원탈퇴
-POST /api/member/find-pw      비밀번호 찾기
+POST /api/member/find-pw      비밀번호 찾기 (임시 비밀번호를 이메일로 발송, 응답에는 미노출)
 GET  /api/member/list         회원 목록 (관리자)
 PUT  /api/member/grade/{id}   등급 변경 (관리자)
 PUT  /api/member/role/{id}    권한 변경 (관리자)
@@ -79,8 +79,8 @@ PUT  /api/member/role/{id}    권한 변경 (관리자)
 ```
 GET    /api/item               전체 상품 조회
 GET    /api/item/{id}          단일 상품 조회
-POST   /api/item               상품 등록 (관리자, multipart)
-PUT    /api/item/{id}          상품 수정 (관리자, multipart)
+POST   /api/item               상품 등록 (관리자, multipart, 이미지 확장자/MIME 검증)
+PUT    /api/item/{id}          상품 수정 (관리자, multipart, 이미지 확장자/MIME 검증)
 DELETE /api/item/{id}          상품 삭제 (관리자)
 PUT    /api/item/{id}/stock    재고 수정
 PUT    /api/item/{id}/discount 할인율 수정
@@ -168,28 +168,26 @@ http
 
 ---
 
-## application.yml
+## 환경 설정 (application.properties)
 
-```yaml
-server:
-  port: 8086
+`src/main/resources/application.properties`는 DB 비밀번호 등 민감정보가 포함되어 있어 `.gitignore` 처리되어 있고, git에는 커밋되지 않습니다. 대신 `application.properties.example`을 참고해서 로컬에 직접 만들어야 합니다.
 
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/shop
-    username: postgres
-    password: 1004
-  jpa:
-    hibernate:
-      ddl-auto: update
-  security:
-    user:
-      name: none
-      password: none
-
-file:
-  upload-dir: /root/uploads
+```bash
+cp src/main/resources/application.properties.example src/main/resources/application.properties
 ```
+
+DB 비밀번호는 파일에 직접 적지 않고 환경변수 `DB_PASSWORD`로 주입합니다.
+
+```bash
+# 로컬 실행 시
+export DB_PASSWORD=본인_postgres_비밀번호
+./gradlew bootRun
+
+# systemd 서비스로 운영 시 (gm-backend.service 예시)
+Environment=DB_PASSWORD=본인_postgres_비밀번호
+```
+
+토스페이먼츠 키, 메일 발송(SMTP) 정보도 같은 파일에서 채워야 결제/비밀번호 찾기 기능이 정상 동작합니다.
 
 ---
 

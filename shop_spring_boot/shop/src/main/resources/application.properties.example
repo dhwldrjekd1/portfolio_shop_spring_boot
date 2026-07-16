@@ -1,0 +1,28 @@
+server.port=8090
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/shop
+spring.datasource.username=postgres
+spring.datasource.password=${DB_PASSWORD}
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+file.upload-dir=/var/www/gm_backend/uploads
+
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=10MB
+
+# 토스페이먼츠 테스트 키 (https://developers.tosspayments.com 에서 발급)
+toss.client-key=발급받은_클라이언트_키
+toss.secret-key=발급받은_시크릿_키
+toss.security-key=발급받은_시크릿_키
+
+# 비밀번호 찾기 메일 발송용 SMTP 설정 (Gmail 앱 비밀번호 발급 후 채우기)
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=
+spring.mail.password=
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true

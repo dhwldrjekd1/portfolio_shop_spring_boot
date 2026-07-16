@@ -372,6 +372,62 @@ const wishlistProducts = computed(() =>
 )
 ```
 
+---
+
+### [Case 15] 이미지 업로드 확장자 검증 누락
+
+**문제** : 상품 이미지 업로드 API가 파일 확장자/타입을 검증하지 않아 임의 파일 업로드 가능  
+**원인** : `saveImage()`가 `MultipartFile`의 원본 파일명을 그대로 저장 파일명에 사용하고, 확장자·Content-Type 화이트리스트가 없었음  
+**해결** : 이미지 MIME 타입·확장자 화이트리스트 검증 추가, 저장 파일명은 원본 파일명을 배제하고 `UUID + 검증된 확장자`로만 구성(경로 조작 가능성도 함께 제거)
+
+```java
+// Before — 원본 파일명을 그대로 사용, 검증 없음
+String filename = UUID.randomUUID() + "_" + image.getOriginalFilename();
+
+// After — 화이트리스트 검증 + 원본 파일명 미사용
+if (!ALLOWED_IMAGE_CONTENT_TYPES.contains(contentType)) throw new IllegalArgumentException(...);
+if (!ALLOWED_IMAGE_EXTENSIONS.contains(extension)) throw new IllegalArgumentException(...);
+String filename = UUID.randomUUID() + "." + extension;
+```
+
+---
+
+### [Case 16] 비밀번호 찾기 API가 임시 비밀번호를 응답으로 노출
+
+**문제** : `/api/member/find-pw` 응답 body에 생성된 임시 비밀번호가 그대로 담겨 반환됨  
+**원인** : 이메일 발송 기능 없이 응답으로만 임시 비밀번호를 전달하도록 구현되어, `loginId`+`email`만 알면 누구나 계정 비밀번호를 탈취 가능한 상태였음  
+**해결** : `spring-boot-starter-mail` 추가 후 임시 비밀번호를 이메일로만 발송, API 응답에서는 완전히 제거
+
+```java
+// Before
+return tempPw; // 컨트롤러가 그대로 응답에 포함
+
+// After
+mailSender.send(message); // 이메일로만 전달, 응답은 success 여부만
+```
+
+---
+
+### [Case 17] DB 비밀번호 하드코딩 및 git 히스토리 노출
+
+**문제** : 초기 커밋의 `application.yml`에 DB 비밀번호가 평문으로 포함되어 GitHub 공개 저장소 히스토리에 영구 노출됨. 이후 `.gitignore` 처리(Case 13)는 향후 추적만 막았을 뿐 과거 커밋 내용은 그대로 남아있었음  
+**원인** : 설정 파일에 비밀번호를 직접 하드코딩하는 구조였고, `application.properties`(실제 사용 파일)도 `.gitignore`에서 누락되어 있었음  
+**해결** :
+1. 실제 DB 비밀번호를 새 값으로 로테이션 (과거 노출된 값 무효화)
+2. `application.properties`를 `.gitignore`에 추가
+3. FORME 프로젝트와 동일하게, 비밀번호를 파일에 직접 쓰지 않고 systemd `Environment=DB_PASSWORD=...`로 주입, `application.properties`에는 `${DB_PASSWORD}` 자리표시자만 남김
+4. 로컬/신규 클론 환경을 위해 `application.properties.example` 템플릿을 커밋
+
+```properties
+# application.properties (git에 커밋되지 않음)
+spring.datasource.password=${DB_PASSWORD}
+```
+
+```ini
+# /etc/systemd/system/gm-backend.service
+Environment=DB_PASSWORD=실제_비밀번호
+```
+
 <br>
 
 ---
@@ -427,25 +483,33 @@ java -jar shop-0.0.1-SNAPSHOT.jar &
 - Node.js 20+
 - Docker
 
-**1. Vue 빌드**
+**1. 환경 설정 파일 준비**
+```bash
+cd shop
+cp src/main/resources/application.properties.example src/main/resources/application.properties
+# application.properties에서 토스/메일 값 채우기, DB 비밀번호는 환경변수로 주입
+export DB_PASSWORD=본인_postgres_비밀번호
+```
+
+**2. Vue 빌드**
 ```bash
 cd vue-shop
 npm install
 npm run build
 ```
 
-**2. 빌드 결과물 복사 (Windows)**
+**3. 빌드 결과물 복사 (Windows)**
 ```bash
 xcopy /E /Y dist\* ..\shop\src\main\resources\static\web03\
 ```
 
-**3. Spring Boot 빌드**
+**4. Spring Boot 빌드**
 ```bash
 cd shop
 gradlew clean build -x test
 ```
 
-**4. Docker 컨테이너에 배포**
+**5. Docker 컨테이너에 배포**
 ```bash
 docker cp build/libs/shop-0.0.1-SNAPSHOT.jar ubuntu01:/root/
 docker exec -it ubuntu01 bash
