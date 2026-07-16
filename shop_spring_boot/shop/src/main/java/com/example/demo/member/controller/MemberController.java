@@ -72,8 +72,8 @@ public class MemberController {
         try {
             String loginId = body.get("loginId");
             String email = body.get("email");
-            String tempPw = memberService.findPw(loginId, email);
-            return ResponseEntity.ok(Map.of("success", true, "tempPw", tempPw));
+            memberService.findPw(loginId, email);
+            return ResponseEntity.ok(Map.of("success", true, "message", "입력하신 이메일로 임시 비밀번호를 발송했습니다."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }

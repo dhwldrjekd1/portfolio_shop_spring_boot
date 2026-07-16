@@ -3,6 +3,8 @@ package com.example.demo.member.service;
 import com.example.demo.member.entity.Member;
 import com.example.demo.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -15,6 +17,7 @@ public class BaseMemberService implements MemberService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder; // 비밀번호 암호화
+    private final JavaMailSender mailSender;
 
     // 회원 데이터 저장
     @Override
@@ -55,9 +58,9 @@ public class BaseMemberService implements MemberService {
         memberRepository.save(member);
     }
 
-    // 비밀번호 찾기 (임시 비밀번호 발급)
+    // 비밀번호 찾기 (임시 비밀번호 발급, 이메일로만 전달 — API 응답에는 노출하지 않음)
     @Override
-    public String findPw(String loginId, String email) {
+    public void findPw(String loginId, String email) {
         Member member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new RuntimeException("아이디 또는 이메일이 일치하지 않습니다."));
         if (!member.getEmail().equals(email)) {
@@ -69,7 +72,12 @@ public class BaseMemberService implements MemberService {
         Map<String, String> body = Map.of("loginPw", passwordEncoder.encode(tempPw));
         member.update(body);
         memberRepository.save(member);
-        return tempPw;
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("[Gentle Monster] 임시 비밀번호 안내");
+        message.setText("요청하신 임시 비밀번호는 [" + tempPw + "] 입니다. 로그인 후 반드시 비밀번호를 변경해주세요.");
+        mailSender.send(message);
     }
 
     // 회원목록 (관리자)

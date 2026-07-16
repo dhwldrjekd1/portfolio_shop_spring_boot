@@ -13,8 +13,8 @@ public interface MemberService {
     void update(String loginId, Map<String, String> body);
     // 회원목록 (관리자)
     List<Member> findAll();
-    // 비밀번호 찾기
-    String findPw(String loginId, String email);
+    // 비밀번호 찾기 (이메일로 임시 비밀번호 발송)
+    void findPw(String loginId, String email);
     // 회원탈퇴
     void delete(String loginId);
     // 등급 변경

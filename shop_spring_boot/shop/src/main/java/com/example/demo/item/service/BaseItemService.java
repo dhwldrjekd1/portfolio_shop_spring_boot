@@ -9,11 +9,17 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class BaseItemService implements ItemService {
+
+    private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png", "gif", "webp");
+    private static final Set<String> ALLOWED_IMAGE_CONTENT_TYPES = Set.of(
+            "image/jpeg", "image/png", "image/gif", "image/webp"
+    );
 
     private final ItemRepository itemRepository;
     private final FileConfig fileConfig;
@@ -33,9 +39,23 @@ public class BaseItemService implements ItemService {
     // 이미지 저장 (파일)
     private String saveImage(MultipartFile image) throws IOException {
         if (image == null || image.isEmpty()) return null;
+
+        String contentType = image.getContentType();
+        if (contentType == null || !ALLOWED_IMAGE_CONTENT_TYPES.contains(contentType.toLowerCase())) {
+            throw new IllegalArgumentException("허용되지 않는 이미지 형식입니다.");
+        }
+
+        String originalFilename = image.getOriginalFilename();
+        String extension = originalFilename != null && originalFilename.contains(".")
+                ? originalFilename.substring(originalFilename.lastIndexOf('.') + 1).toLowerCase()
+                : "";
+        if (!ALLOWED_IMAGE_EXTENSIONS.contains(extension)) {
+            throw new IllegalArgumentException("허용되지 않는 파일 확장자입니다.");
+        }
+
         File dir = new File(fileConfig.uploadDir);
         if (!dir.exists()) dir.mkdirs();
-        String filename = UUID.randomUUID() + "_" + image.getOriginalFilename();
+        String filename = UUID.randomUUID() + "." + extension;
         File dest = new File(dir, filename);
         image.transferTo(dest);
         return "/uploads/" + filename;
