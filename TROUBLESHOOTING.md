@@ -601,6 +601,17 @@ private void validateAmount(Integer amount, List<Map<String, Object>> items) {
 
 curl로 검증: 정적 카탈로그 상품(정가 40만원, 무료배송) 정상금액 주문 성공 / 100원으로 조작한 주문 거부 / 존재하지 않는 상품 ID 거부 / DB 할인상품(20% 할인 반영 금액) 정상 주문 성공 / 할인 미반영 금액으로는 거부, 4가지 케이스 모두 확인.
 
+---
+
+### [Case 25] 사용되지 않는 죽은 코드 제거
+
+**내용** : 보안 점검 과정에서 발견된, 아무 곳에서도 참조되지 않는 코드 정리
+- `account/**` (`AccountController`, `AccountHelper`/`SessionAccountHelper`, DTO 2종) — 세션 기반 로그인을 자체 구현한 예전 시도로 보이며, 프론트엔드는 물론 백엔드 어디에서도 호출/참조되지 않음. `/v1/api/account/**` 경로가 `SecurityConfig` 화이트리스트에도 없어 `anyRequest().authenticated()`에 걸려 실제로 접근도 불가능했던 상태(Case 18 조사 중 발견)
+- `interceptor/LoginCheckInterceptor` — 로그인 여부를 세션으로 검사하는 인터셉터지만 `WebConfig`에 `addInterceptors()`로 등록된 적이 없어 항상 미동작 상태(Case 18의 근본 원인 중 하나)
+- `common/util/HttpUtils` — 위 `SessionAccountHelper`에서만 쓰이던 세션 헬퍼, 다른 사용처 없음
+
+전부 `grep`으로 다른 패키지에서의 참조가 0건인 것을 확인 후 삭제. 삭제 후 빌드·재기동·핵심 엔드포인트(`/web03/`, `/api/item`, `/api/community`) 정상 응답 확인.
+
 <br>
 
 ---
