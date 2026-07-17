@@ -479,6 +479,46 @@ private Integer id;
 
 실제 회원가입 → 로그인 → 문의 등록 → 위시리스트 추가 → 탈퇴까지 curl로 재현하여 정상 동작 확인.
 
+---
+
+### [Case 20] 로그인 API에 brute-force 방어 부재
+
+**문제** : `/api/member/login`에 시도 횟수 제한이 전혀 없어 봇/스크립트가 특정 계정 비밀번호를 무제한으로 대입 시도할 수 있는 상태였음  
+**원인** : 로그인 성공/실패만 판별할 뿐, 실패 횟수를 추적하는 로직이 없었음  
+**해결** : 계정(loginId) 단위로 연속 실패 횟수를 추적하는 `LoginAttemptService`를 추가 — 5회 연속 실패 시 5분간 잠금(HTTP 429), 로그인 성공 시 카운트 초기화. 단일 인스턴스 배포라 인메모리(`ConcurrentHashMap`)로 충분
+
+```java
+if (loginAttemptService.isLocked(loginId)) {
+    return ResponseEntity.status(429).body(Map.of("success", false, "message", "..."));
+}
+Member member = memberService.find(loginId, body.get("loginPw"));
+if (member != null) {
+    loginAttemptService.loginSucceeded(loginId);
+    ...
+}
+loginAttemptService.loginFailed(loginId);
+```
+
+curl로 5회 연속 실패 → 6번째 429 확인, 무관한 다른 계정은 영향 없음(계정별 독립 추적) 확인.
+
+---
+
+### [Case 21] 컨트롤러 예외 메시지가 내부 SQL/스택 정보를 그대로 노출
+
+**문제** : 거의 모든 컨트롤러가 `catch (Exception e)` 블록에서 `e.getMessage()`를 그대로 응답에 담아 반환(45곳). Case 19 재현 테스트 중 실제로 `cannot insert a non-DEFAULT value into column "id"` 같은 원본 SQL 오류 문구가 클라이언트에 그대로 노출되는 것을 확인 — 테이블/컬럼명 등 내부 구조를 정찰하는 데 악용될 수 있음  
+**원인** : 컨트롤러 단에서 예외 종류를 구분하지 않고 메시지를 그대로 전달하도록 일괄 작성되어 있었음  
+**해결** : 공통 헬퍼 `ApiError.badRequest(e)`를 추가해 `DataAccessException`(DB/JPA 계층 예외)만 서버 로그로 남기고 클라이언트에는 일반화된 메시지로 응답하도록 하고, 45곳의 `e.getMessage()` 호출을 전부 교체. 서비스 코드에서 직접 던지는 업무 예외(예: "아이디 또는 이메일이 일치하지 않습니다")는 기존처럼 그대로 노출되어 UX는 그대로 유지됨
+
+```java
+// Before — 모든 예외를 그대로 노출
+return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+
+// After — DB 계층 예외만 서버 로그로 격리, 응답은 일반화
+return ApiError.badRequest(e);
+```
+
+중복 가입 시도(DB unique 제약 위반)로 재현 테스트 → 클라이언트에는 "요청을 처리하지 못했습니다..." 일반 메시지만 노출되고, 서버 로그에는 `DataIntegrityViolationException` 상세가 남는 것 확인. 존재하지 않는 계정으로 비밀번호 찾기 시도 시 기존 안내 메시지는 그대로 노출되는 것도 확인.
+
 <br>
 
 ---

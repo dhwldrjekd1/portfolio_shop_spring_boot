@@ -1,5 +1,6 @@
 package com.example.demo.inquiry.controller;
 
+import com.example.demo.common.error.ApiError;
 import com.example.demo.common.auth.SessionAuth;
 import com.example.demo.inquiry.entity.Inquiry;
 import com.example.demo.inquiry.service.InquiryService;
@@ -33,7 +34,7 @@ public class InquiryController {
             );
             return ResponseEntity.ok(Map.of("success", true, "id", inquiry.getId()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -61,7 +62,7 @@ public class InquiryController {
             inquiryService.reply(id, body.get("reply"));
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
     // 문의 수정 (작성자 본인 또는 관리자)
@@ -73,7 +74,7 @@ public class InquiryController {
             inquiryService.update(id, body.get("content"));
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -86,7 +87,7 @@ public class InquiryController {
             inquiryService.delete(id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 }

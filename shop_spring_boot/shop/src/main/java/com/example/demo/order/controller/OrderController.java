@@ -1,5 +1,6 @@
 package com.example.demo.order.controller;
 
+import com.example.demo.common.error.ApiError;
 import com.example.demo.common.auth.SessionAuth;
 import com.example.demo.order.entity.Order;
 import com.example.demo.order.service.OrderService;
@@ -42,7 +43,7 @@ public class OrderController {
             Order order = orderService.save(loginId, name, address, payment, cardNumber, amount, items);
             return ResponseEntity.ok(Map.of("success", true, "id", order.getId()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
     // 전체 주문 조회 (관리자)
@@ -53,7 +54,7 @@ public class OrderController {
             List<Order> list = orderService.findAll();
             return ResponseEntity.ok(list);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -65,7 +66,7 @@ public class OrderController {
             orderService.updateStatus(id, body.get("status"));
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
     // 주문 삭제 (관리자)
@@ -76,7 +77,7 @@ public class OrderController {
             orderService.delete(id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
     // 주문 취소 (본인 또는 관리자)
@@ -88,7 +89,7 @@ public class OrderController {
             orderService.updateStatus(id, "취소");
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 }

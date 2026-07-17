@@ -1,5 +1,6 @@
 package com.example.demo.board.controller;
 
+import com.example.demo.common.error.ApiError;
 import com.example.demo.board.entity.Board;
 import com.example.demo.board.entity.Comment;
 import com.example.demo.board.service.BoardService;
@@ -38,7 +39,7 @@ public class BoardController {
             );
             return ResponseEntity.ok(Map.of("success", true, "id", board.getId()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -51,7 +52,7 @@ public class BoardController {
             boardService.update(id, body.get("title"), body.get("content"));
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -64,7 +65,7 @@ public class BoardController {
             boardService.delete(id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -87,7 +88,7 @@ public class BoardController {
             );
             return ResponseEntity.ok(Map.of("success", true, "id", comment.getId()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -100,7 +101,7 @@ public class BoardController {
             boardService.deleteComment(id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 }

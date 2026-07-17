@@ -189,6 +189,8 @@ http
 
 로그인 API(`/api/member/login`)에는 `LoginAttemptService`로 brute-force 방어가 적용되어 있습니다 — 계정(loginId)당 5회 연속 실패 시 5분간 잠금(429 응답), 로그인 성공 시 카운트 초기화, 계정별로 독립 추적됩니다.
 
+컨트롤러 예외 처리는 `ApiError.badRequest(e)`를 통해 응답합니다. DB/JPA 계층 예외(`DataAccessException`)는 서버 로그에만 상세를 남기고 클라이언트에는 일반화된 메시지를 반환해 SQL/테이블 구조 등 내부 정보가 노출되지 않도록 합니다. 서비스에서 직접 던지는 업무 예외 메시지(예: 유효성 검증 실패 안내)는 그대로 노출됩니다.
+
 ```java
 // 관리자 전용 API 예시
 if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();

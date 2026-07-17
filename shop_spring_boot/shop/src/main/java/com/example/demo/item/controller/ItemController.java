@@ -1,5 +1,6 @@
 package com.example.demo.item.controller;
 
+import com.example.demo.common.error.ApiError;
 import com.example.demo.common.auth.SessionAuth;
 import com.example.demo.item.entity.Item;
 import com.example.demo.item.service.ItemService;
@@ -32,7 +33,7 @@ public class ItemController {
             Item item = itemService.findById(id);
             return ResponseEntity.ok(item);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -55,7 +56,7 @@ public class ItemController {
             Item item = itemService.save(name, price, discountRate, stock, description, image, imageUrl, category, badge);
             return ResponseEntity.ok(Map.of("success", true, "id", item.getId()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -79,7 +80,7 @@ public class ItemController {
             itemService.update(id, name, price, discountRate, stock, description, image, imageUrl, category, badge);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -91,7 +92,7 @@ public class ItemController {
             itemService.delete(id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -104,7 +105,7 @@ public class ItemController {
             itemService.updateStock(id, stock);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -117,7 +118,7 @@ public class ItemController {
             itemService.updateDiscountRate(id, discountRate);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
     // 세부정보 수정 (관리자)
@@ -133,7 +134,7 @@ public class ItemController {
             itemService.updateDetails(id, detailsJson);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 }

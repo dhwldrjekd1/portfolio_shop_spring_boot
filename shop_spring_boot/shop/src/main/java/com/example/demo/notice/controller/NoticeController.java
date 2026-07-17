@@ -1,5 +1,6 @@
 package com.example.demo.notice.controller;
 
+import com.example.demo.common.error.ApiError;
 import com.example.demo.common.auth.SessionAuth;
 import com.example.demo.notice.entity.Notice;
 import com.example.demo.notice.service.NoticeService;
@@ -37,7 +38,7 @@ public class NoticeController {
             );
             return ResponseEntity.ok(Map.of("success", true, "id", notice.getId()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -54,7 +55,7 @@ public class NoticeController {
             );
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -66,7 +67,7 @@ public class NoticeController {
             noticeService.delete(id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 }

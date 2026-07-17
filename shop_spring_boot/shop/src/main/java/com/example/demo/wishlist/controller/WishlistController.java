@@ -1,5 +1,6 @@
 package com.example.demo.wishlist.controller;
 
+import com.example.demo.common.error.ApiError;
 import com.example.demo.common.auth.SessionAuth;
 import com.example.demo.wishlist.entity.Wishlist;
 import com.example.demo.wishlist.service.WishlistService;
@@ -36,7 +37,7 @@ public class WishlistController {
             wishlistService.add(loginId, itemId);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -48,7 +49,7 @@ public class WishlistController {
             wishlistService.remove(loginId, itemId);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 }

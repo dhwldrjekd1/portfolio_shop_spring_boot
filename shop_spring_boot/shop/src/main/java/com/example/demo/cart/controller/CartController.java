@@ -1,5 +1,6 @@
 package com.example.demo.cart.controller;
 
+import com.example.demo.common.error.ApiError;
 import com.example.demo.cart.entity.Cart;
 import com.example.demo.cart.service.CartService;
 import com.example.demo.common.auth.SessionAuth;
@@ -46,7 +47,7 @@ public class CartController {
             }
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -60,7 +61,7 @@ public class CartController {
             cartService.updateQuantity(id, quantity);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -73,7 +74,7 @@ public class CartController {
             cartService.delete(id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -85,7 +86,7 @@ public class CartController {
             cartService.deleteAll(loginId);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 }

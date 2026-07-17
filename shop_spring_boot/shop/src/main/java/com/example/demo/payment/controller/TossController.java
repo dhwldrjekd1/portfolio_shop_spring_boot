@@ -1,5 +1,6 @@
 package com.example.demo.payment.controller;
 
+import com.example.demo.common.error.ApiError;
 import com.example.demo.payment.TossConfig;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
@@ -64,10 +65,7 @@ public class TossController {
             ));
 
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", e.getMessage()
-            ));
+            return ApiError.badRequest(e);
         }
     }
 }

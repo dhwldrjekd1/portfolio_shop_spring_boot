@@ -1,5 +1,6 @@
 package com.example.demo.qna.controller;
 
+import com.example.demo.common.error.ApiError;
 import com.example.demo.common.auth.SessionAuth;
 import com.example.demo.qna.entity.Qna;
 import com.example.demo.qna.service.QnaService;
@@ -42,7 +43,7 @@ public class QnaController {
             );
             return ResponseEntity.ok(Map.of("success", true, "id", qna.getId()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -59,7 +60,7 @@ public class QnaController {
             );
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -71,7 +72,7 @@ public class QnaController {
             qnaService.delete(id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 }

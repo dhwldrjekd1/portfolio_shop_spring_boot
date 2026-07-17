@@ -1,5 +1,6 @@
 package com.example.demo.review.controller;
 
+import com.example.demo.common.error.ApiError;
 import com.example.demo.common.auth.SessionAuth;
 import com.example.demo.review.entity.Review;
 import com.example.demo.review.service.ReviewService;
@@ -52,7 +53,7 @@ public class ReviewController {
             Review review = reviewService.save(itemId, loginId, name, content, rating);
             return ResponseEntity.ok(Map.of("success", true, "id", review.getId()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -67,7 +68,7 @@ public class ReviewController {
             reviewService.update(id, content, rating);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -80,7 +81,7 @@ public class ReviewController {
             reviewService.delete(id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 

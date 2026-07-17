@@ -1,4 +1,5 @@
 package com.example.demo.member.controller;
+import com.example.demo.common.error.ApiError;
 import com.example.demo.common.auth.LoginAttemptService;
 import com.example.demo.common.auth.SessionAuth;
 import com.example.demo.member.entity.Member;
@@ -31,7 +32,7 @@ public class MemberController {
             );
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
     // 로그인
@@ -79,7 +80,7 @@ public class MemberController {
             Member member = memberService.findByLoginId(loginId);
             return ResponseEntity.ok(member);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
     // 회원정보 수정 (본인 또는 관리자)
@@ -90,7 +91,7 @@ public class MemberController {
             memberService.update(loginId, body);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -103,7 +104,7 @@ public class MemberController {
             memberService.findPw(loginId, email);
             return ResponseEntity.ok(Map.of("success", true, "message", "입력하신 이메일로 임시 비밀번호를 발송했습니다."));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
     // 회원 목록 (관리자)
@@ -114,7 +115,7 @@ public class MemberController {
             List<Member> members = memberService.findAll();
             return ResponseEntity.ok(members);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -127,7 +128,7 @@ public class MemberController {
             if (loginId.equals(SessionAuth.currentLoginId(request))) SessionAuth.logout(request);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -139,7 +140,7 @@ public class MemberController {
             memberService.updateGrade(loginId, body.get("grade"));
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
@@ -151,7 +152,7 @@ public class MemberController {
             memberService.updateRole(loginId, body.get("role"));
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+            return ApiError.badRequest(e);
         }
     }
 
