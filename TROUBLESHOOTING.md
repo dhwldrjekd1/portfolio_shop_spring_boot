@@ -571,6 +571,36 @@ if (MUTATING_METHODS.has(method)) {
 
 curl로 최초 GET → 쿠키 발급 → 토큰 없이 POST(403 차단) → 토큰 포함 POST(정상 처리) 확인. 회원가입 → 로그인 → 위시리스트 추가 → 커뮤니티 글쓰기 → 로그아웃 전 과정을 토큰 포함 요청으로 재현해 정상 동작 확인, `/api/community` 조회도 200으로 복구된 것 확인.
 
+---
+
+### [Case 24] 주문 금액이 결제수단과 무관하게 서버 검증 없이 클라이언트 값 그대로 저장됨 (가격 조작 가능)
+
+**문제** : `POST /api/order`가 클라이언트가 보낸 `amount`를 어떤 검증도 없이 그대로 저장. `OrderItem`은 가격 필드조차 없어 상품 실제 가격과 결제 금액을 연결할 방법이 없었음. 토스 결제뿐 아니라 카카오/네이버/계좌이체 등 검증 주체가 없는 결제수단은 특히 취약 — 원하는 금액으로 주문을 만들 수 있는 구조였음(토스 결제 금액 서버 이중검증 부재로 시작했으나 조사 중 더 근본적인 문제로 확인)  
+**부수 발견** : 서버 검증 기준을 정하려고 프론트엔드 금액 계산을 보니, 장바구니 합계(`cartTotal`)가 할인율을 전혀 반영하지 않고 원가로 계산되고 있었음(별개의 기존 버그)  
+**해결** :
+1. 프론트엔드 `cartTotal`이 상품 카드/상세 페이지와 동일한 규칙(할인가, 100원 단위 반올림)으로 할인을 반영하도록 수정
+2. `BaseOrderService.save()`에 `validateAmount()`를 추가해 주문 항목의 실제 가격(할인 반영) 합계 + 배송비(5만원 미만 시 3천원)를 서버에서 재계산하고, 클라이언트가 보낸 `amount`와 다르면 주문 자체를 거부
+3. 이 프로젝트는 상품 카탈로그가 DB(`items`, 관리자가 추가한 상품)와 정적 시드 파일(`products.json`, 초기 22개 상품)로 나뉘어 있어(Case 8), DB에 없는 상품 ID는 `StaticProductCatalog`(서버가 직접 배포하는 `products.json`을 읽어옴 — 클라이언트가 조작 불가)로 폴백 조회
+
+```java
+private void validateAmount(Integer amount, List<Map<String, Object>> items) {
+    double subtotal = 0;
+    for (Map<String, Object> item : items) {
+        // DB(items)에 있으면 DB 가격, 없으면 정적 카탈로그(products.json) 가격 사용
+        double unitPrice = discountRate > 0
+                ? Math.round((price * (1 - discountRate / 100)) / 100.0) * 100
+                : price;
+        subtotal += unitPrice * quantity;
+    }
+    double expected = subtotal + (subtotal >= 50000 ? 0 : 3000);
+    if (amount == null || Math.abs(expected - amount) > 1) {
+        throw new IllegalArgumentException("주문 금액이 올바르지 않습니다.");
+    }
+}
+```
+
+curl로 검증: 정적 카탈로그 상품(정가 40만원, 무료배송) 정상금액 주문 성공 / 100원으로 조작한 주문 거부 / 존재하지 않는 상품 ID 거부 / DB 할인상품(20% 할인 반영 금액) 정상 주문 성공 / 할인 미반영 금액으로는 거부, 4가지 케이스 모두 확인.
+
 <br>
 
 ---

@@ -109,7 +109,7 @@ DELETE /api/wishlist/{loginId}/{itemId} 위시리스트 삭제 (본인/관리자
 ### 주문 API
 ```
 GET  /api/order/{loginId}       회원 주문 목록 (본인/관리자)
-POST /api/order                 주문 생성 (로그인 필요, 세션의 로그인 아이디로만 생성)
+POST /api/order                 주문 생성 (로그인 필요, 세션의 로그인 아이디로만 생성, 서버가 실가격 재계산 후 금액 검증)
 GET  /api/order/all             전체 주문 (관리자)
 PUT  /api/order/{id}/status     상태 변경 (관리자)
 PUT  /api/order/{id}/cancel     주문 취소 (본인/관리자)
@@ -199,6 +199,8 @@ http
 비밀번호는 `PasswordPolicy`로 서버측 검증됩니다 — 8자 이상 + 영문 소문자·숫자·특수문자 각 최소 1개 포함(회원가입, 비밀번호 변경 모두 적용).
 
 CSRF는 Spring Security 내장 기능(쿠키 기반 토큰, `XSRF-TOKEN`)으로 방어합니다. 프론트엔드는 `csrf.js`가 `fetch`를 감싸 상태변경 요청(POST/PUT/DELETE)마다 쿠키의 토큰을 `X-XSRF-TOKEN` 헤더로 자동 첨부합니다.
+
+주문 금액은 결제수단과 무관하게 `BaseOrderService.validateAmount()`가 서버에서 재계산해 검증합니다. 상품 가격은 DB(`items`)에 있으면 DB 값을, 없으면 정적 시드 카탈로그(`products.json`, `StaticProductCatalog`)에서 조회하며, 클라이언트가 보낸 `amount`가 실제 가격(할인 반영) 합계 + 배송비와 다르면 주문이 거부됩니다.
 
 ```java
 // 관리자 전용 API 예시
