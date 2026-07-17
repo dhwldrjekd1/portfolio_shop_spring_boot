@@ -1,8 +1,10 @@
-# Gentle Monster Inspired - 쇼핑몰 포트폴리오 (Backand)
+# Gentle Monster Inspired - 쇼핑몰 포트폴리오 (Backend)
 
 > 젠틀몬스터를 디자인 레퍼런스로 참고하여, 전체 기능과 아키텍처는 직접 설계 및 구현한 풀스택 쇼핑몰 포트폴리오입니다.
 >
-> **Backand Repository:** [portfolio_shop_spring_boot](https://github.com/dhwldrjekd1/portfolio_shop_spring_boot)
+> **Backend Repository:** [portfolio_shop_spring_boot](https://github.com/dhwldrjekd1/portfolio_shop_spring_boot)
+>
+> **마지막 업데이트:** 2026-07-18
 
 ---
 
