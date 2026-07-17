@@ -187,6 +187,8 @@ http
 
 `permitAll()`은 "Spring Security 필터에서 막지 않는다"는 의미일 뿐, 실제 로그인/관리자 여부는 각 컨트롤러가 `SessionAuth` 헬퍼로 직접 검증합니다. 로그인 성공 시 `HttpSession`에 `loginId`/`role`을 저장하고, 관리자 전용 API는 `role`을, 본인 소유 API는 세션의 `loginId`와 리소스 소유자를 비교합니다. 세션 쿠키는 `HttpOnly` + `SameSite=Lax`로 설정되어 있습니다.
 
+로그인 API(`/api/member/login`)에는 `LoginAttemptService`로 brute-force 방어가 적용되어 있습니다 — 계정(loginId)당 5회 연속 실패 시 5분간 잠금(429 응답), 로그인 성공 시 카운트 초기화, 계정별로 독립 추적됩니다.
+
 ```java
 // 관리자 전용 API 예시
 if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
