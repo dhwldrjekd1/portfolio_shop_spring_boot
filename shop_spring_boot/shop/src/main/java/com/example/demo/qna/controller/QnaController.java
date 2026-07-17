@@ -1,7 +1,9 @@
 package com.example.demo.qna.controller;
 
+import com.example.demo.common.auth.SessionAuth;
 import com.example.demo.qna.entity.Qna;
 import com.example.demo.qna.service.QnaService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,8 +30,10 @@ public class QnaController {
         return ResponseEntity.ok(list);
     }
 
+    // 등록 (관리자)
     @PostMapping
-    public ResponseEntity<?> save(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> save(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             Qna qna = qnaService.save(
                     body.get("category"),
@@ -42,8 +46,10 @@ public class QnaController {
         }
     }
 
+    // 수정 (관리자)
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody Map<String, String> body, HttpServletRequest request) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             qnaService.update(
                     id,
@@ -57,8 +63,10 @@ public class QnaController {
         }
     }
 
+    // 삭제 (관리자)
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Integer id) {
+    public ResponseEntity<?> delete(@PathVariable Integer id, HttpServletRequest request) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             qnaService.delete(id);
             return ResponseEntity.ok(Map.of("success", true));

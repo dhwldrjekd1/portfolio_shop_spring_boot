@@ -1,6 +1,8 @@
 package com.example.demo.member.controller;
+import com.example.demo.common.auth.SessionAuth;
 import com.example.demo.member.entity.Member;
 import com.example.demo.member.service.MemberService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,22 +34,33 @@ public class MemberController {
     }
     // 로그인
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> body, HttpServletRequest request) {
         Member member = memberService.find(body.get("loginId"), body.get("loginPw"));
         if (member != null) {
+            String role = member.getRole() != null ? member.getRole() : "user";
+            SessionAuth.login(request, member.getLoginId(), role);
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "name", member.getName(),
                     "email", member.getEmail(),
                     "loginId", member.getLoginId(),
-                    "role", member.getRole() != null ? member.getRole() : "user"
+                    "role", role
             ));
         }
         return ResponseEntity.badRequest().body(Map.of("success", false, "message", "아이디 또는 비밀번호가 틀렸습니다."));
     }
-    // 회원정보 조회
+
+    // 로그아웃
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        SessionAuth.logout(request);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    // 회원정보 조회 (본인 또는 관리자)
     @GetMapping("/info/{loginId}")
-    public ResponseEntity<?> info(@PathVariable String loginId) {
+    public ResponseEntity<?> info(@PathVariable String loginId, HttpServletRequest request) {
+        if (!SessionAuth.isSelfOrAdmin(request, loginId)) return SessionAuth.forbidden();
         try {
             Member member = memberService.findByLoginId(loginId);
             return ResponseEntity.ok(member);
@@ -55,9 +68,10 @@ public class MemberController {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
     }
-    // 회원정보 수정
+    // 회원정보 수정 (본인 또는 관리자)
     @PutMapping("/update/{loginId}")
-    public ResponseEntity<?> update(@PathVariable String loginId, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> update(@PathVariable String loginId, @RequestBody Map<String, String> body, HttpServletRequest request) {
+        if (!SessionAuth.isSelfOrAdmin(request, loginId)) return SessionAuth.forbidden();
         try {
             memberService.update(loginId, body);
             return ResponseEntity.ok(Map.of("success", true));
@@ -80,7 +94,8 @@ public class MemberController {
     }
     // 회원 목록 (관리자)
     @GetMapping("/list")
-    public ResponseEntity<?> list() {
+    public ResponseEntity<?> list(HttpServletRequest request) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             List<Member> members = memberService.findAll();
             return ResponseEntity.ok(members);
@@ -89,11 +104,13 @@ public class MemberController {
         }
     }
 
-    // 회원탈퇴
+    // 회원탈퇴 (본인 또는 관리자)
     @DeleteMapping("/delete/{loginId}")
-    public ResponseEntity<?> delete(@PathVariable String loginId) {
+    public ResponseEntity<?> delete(@PathVariable String loginId, HttpServletRequest request) {
+        if (!SessionAuth.isSelfOrAdmin(request, loginId)) return SessionAuth.forbidden();
         try {
             memberService.delete(loginId);
+            if (loginId.equals(SessionAuth.currentLoginId(request))) SessionAuth.logout(request);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
@@ -102,7 +119,8 @@ public class MemberController {
 
     // 등급 변경 (관리자 수동)
     @PutMapping("/grade/{loginId}")
-    public ResponseEntity<?> updateGrade(@PathVariable String loginId, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> updateGrade(@PathVariable String loginId, @RequestBody Map<String, String> body, HttpServletRequest request) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             memberService.updateGrade(loginId, body.get("grade"));
             return ResponseEntity.ok(Map.of("success", true));
@@ -113,7 +131,8 @@ public class MemberController {
 
     // role 변경 (관리자 - 강퇴/권한변경)
     @PutMapping("/role/{loginId}")
-    public ResponseEntity<?> updateRole(@PathVariable String loginId, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> updateRole(@PathVariable String loginId, @RequestBody Map<String, String> body, HttpServletRequest request) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             memberService.updateRole(loginId, body.get("role"));
             return ResponseEntity.ok(Map.of("success", true));

@@ -62,13 +62,16 @@ src/main/java/com/example/demo/
 
 ## 구현 기능
 
+> 아래 (관리자) / (본인) 표시는 세션 기반 서버측 권한 검증(`SessionAuth`)이 적용되어 있다는 의미입니다. 로그인 필요 API는 세션에 저장된 `loginId`로 소유자를 판별합니다.
+
 ### 회원 API
 ```
 POST /api/member/register     회원가입
-POST /api/member/login        로그인 (BCrypt 검증)
-GET  /api/member/info/{id}    회원정보 조회
-PUT  /api/member/update/{id}  회원정보 수정
-DELETE /api/member/delete/{id} 회원탈퇴
+POST /api/member/login        로그인 (BCrypt 검증, 성공 시 서버 세션 발급)
+POST /api/member/logout       로그아웃 (서버 세션 무효화)
+GET  /api/member/info/{id}    회원정보 조회 (본인/관리자)
+PUT  /api/member/update/{id}  회원정보 수정 (본인/관리자)
+DELETE /api/member/delete/{id} 회원탈퇴 (본인/관리자)
 POST /api/member/find-pw      비밀번호 찾기 (임시 비밀번호를 이메일로 발송, 응답에는 미노출)
 GET  /api/member/list         회원 목록 (관리자)
 PUT  /api/member/grade/{id}   등급 변경 (관리자)
@@ -82,34 +85,34 @@ GET    /api/item/{id}          단일 상품 조회
 POST   /api/item               상품 등록 (관리자, multipart, 이미지 확장자/MIME 검증)
 PUT    /api/item/{id}          상품 수정 (관리자, multipart, 이미지 확장자/MIME 검증)
 DELETE /api/item/{id}          상품 삭제 (관리자)
-PUT    /api/item/{id}/stock    재고 수정
-PUT    /api/item/{id}/discount 할인율 수정
-PUT    /api/item/{id}/details  세부정보 수정 (JSON)
+PUT    /api/item/{id}/stock    재고 수정 (관리자)
+PUT    /api/item/{id}/discount 할인율 수정 (관리자)
+PUT    /api/item/{id}/details  세부정보 수정 (관리자, JSON)
 ```
 
 ### 장바구니 API
 ```
-GET    /api/cart/{loginId}       장바구니 조회
-POST   /api/cart                 장바구니 추가
-PUT    /api/cart/{id}            수량 변경
-DELETE /api/cart/{id}            개별 삭제
-DELETE /api/cart/clear/{loginId} 전체 삭제
+GET    /api/cart/{loginId}       장바구니 조회 (본인/관리자)
+POST   /api/cart                 장바구니 추가 (로그인 필요)
+PUT    /api/cart/{id}            수량 변경 (본인/관리자)
+DELETE /api/cart/{id}            개별 삭제 (본인/관리자)
+DELETE /api/cart/clear/{loginId} 전체 삭제 (본인/관리자)
 ```
 
 ### 위시리스트 API
 ```
-GET    /api/wishlist/{loginId}          위시리스트 조회
-POST   /api/wishlist                    위시리스트 추가
-DELETE /api/wishlist/{loginId}/{itemId} 위시리스트 삭제
+GET    /api/wishlist/{loginId}          위시리스트 조회 (본인/관리자)
+POST   /api/wishlist                    위시리스트 추가 (로그인 필요)
+DELETE /api/wishlist/{loginId}/{itemId} 위시리스트 삭제 (본인/관리자)
 ```
 
 ### 주문 API
 ```
-GET  /api/order/{loginId}       회원 주문 목록
-POST /api/order                 주문 생성
+GET  /api/order/{loginId}       회원 주문 목록 (본인/관리자)
+POST /api/order                 주문 생성 (로그인 필요, 세션의 로그인 아이디로만 생성)
 GET  /api/order/all             전체 주문 (관리자)
 PUT  /api/order/{id}/status     상태 변경 (관리자)
-PUT  /api/order/{id}/cancel     주문 취소 (일반회원)
+PUT  /api/order/{id}/cancel     주문 취소 (본인/관리자)
 DELETE /api/order/{id}          주문 삭제 (관리자)
 ```
 
@@ -117,12 +120,28 @@ DELETE /api/order/{id}          주문 삭제 (관리자)
 ```
 GET  /api/review/item/{itemId}                      상품별 리뷰
 GET  /api/review/member/{loginId}                   회원별 리뷰
-GET  /api/review/all                                전체 리뷰
-POST /api/review                                    리뷰 등록
-PUT  /api/review/{id}                               리뷰 수정
-DELETE /api/review/{id}                             리뷰 삭제
+GET  /api/review/all                                전체 리뷰 (관리자)
+POST /api/review                                    리뷰 등록 (로그인 필요)
+PUT  /api/review/{id}                               리뷰 수정 (작성자 본인/관리자)
+DELETE /api/review/{id}                              리뷰 삭제 (작성자 본인/관리자)
 GET  /api/review/check/purchased/{loginId}/{itemId} 구매 확인
 GET  /api/review/check/reviewed/{loginId}/{itemId}  리뷰 작성 확인
+```
+
+### 고객문의 / 커뮤니티 API
+```
+GET  /api/inquiry/my/{loginId}   내 문의 목록 (본인/관리자)
+GET  /api/inquiry/all            전체 문의 목록 (관리자)
+POST /api/inquiry/{id}/reply     답글 등록 (관리자)
+PUT  /api/inquiry/{id}           문의 수정 (작성자 본인/관리자)
+DELETE /api/inquiry/{id}         문의 삭제 (작성자 본인/관리자)
+
+POST   /api/notice, PUT /api/notice/{id}, DELETE /api/notice/{id}   공지 등록/수정/삭제 (관리자)
+POST   /api/qna, PUT /api/qna/{id}, DELETE /api/qna/{id}            QnA 등록/수정/삭제 (관리자)
+
+PUT    /api/community/{id}              게시글 수정 (작성자 본인/관리자)
+DELETE /api/community/{id}              게시글 삭제 (작성자 본인/관리자)
+DELETE /api/community/comments/{id}     댓글 삭제 (작성자 본인/관리자)
 ```
 
 ---
@@ -164,6 +183,16 @@ http
   )
   .formLogin(AbstractHttpConfigurer::disable)
   .httpBasic(AbstractHttpConfigurer::disable);
+```
+
+`permitAll()`은 "Spring Security 필터에서 막지 않는다"는 의미일 뿐, 실제 로그인/관리자 여부는 각 컨트롤러가 `SessionAuth` 헬퍼로 직접 검증합니다. 로그인 성공 시 `HttpSession`에 `loginId`/`role`을 저장하고, 관리자 전용 API는 `role`을, 본인 소유 API는 세션의 `loginId`와 리소스 소유자를 비교합니다. 세션 쿠키는 `HttpOnly` + `SameSite=Lax`로 설정되어 있습니다.
+
+```java
+// 관리자 전용 API 예시
+if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
+
+// 본인 소유 리소스 API 예시
+if (!SessionAuth.isSelfOrAdmin(request, resourceOwnerLoginId)) return SessionAuth.forbidden();
 ```
 
 ---

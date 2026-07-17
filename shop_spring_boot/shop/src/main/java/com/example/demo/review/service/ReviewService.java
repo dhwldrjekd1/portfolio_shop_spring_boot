@@ -10,6 +10,8 @@ public interface ReviewService {
     List<Review> findByLoginId(String loginId);
     // 전체 리뷰 조회 (관리자)
     List<Review> findAll();
+    // 단일 리뷰 조회
+    Review findById(Integer id);
     // 리뷰 등록
     Review save(Integer itemId, String loginId, String name, String content, Integer rating);
     // 리뷰 수정

@@ -27,6 +27,11 @@ public class BaseBoardService implements BoardService {
     }
 
     @Override
+    public Board findById(Integer id) {
+        return boardRepository.findById(id).orElseThrow();
+    }
+
+    @Override
     public void update(Integer id, String title, String content) {
         Board board = boardRepository.findById(id).orElseThrow();
         board.update(title, content);
@@ -48,6 +53,11 @@ public class BaseBoardService implements BoardService {
     @Override
     public List<Comment> findComments(Integer boardId) {
         return commentRepository.findByBoardIdOrderByCreatedAsc(boardId);
+    }
+
+    @Override
+    public Comment findCommentById(Integer id) {
+        return commentRepository.findById(id).orElseThrow();
     }
 
     @Override

@@ -30,6 +30,11 @@ public class BaseInquiryService implements InquiryService {
     }
 
     @Override
+    public Inquiry findById(Integer id) {
+        return inquiryRepository.findById(id).orElseThrow();
+    }
+
+    @Override
     public void reply(Integer id, String reply) {
         Inquiry inquiry = inquiryRepository.findById(id).orElseThrow();
         inquiry.setReply(reply);

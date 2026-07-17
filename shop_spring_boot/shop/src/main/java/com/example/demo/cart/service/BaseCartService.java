@@ -18,6 +18,11 @@ public class BaseCartService implements CartService {
     }
 
     @Override
+    public Cart findById(Integer id) {
+        return cartRepository.findById(id).orElseThrow();
+    }
+
+    @Override
     public Cart findByLoginIdAndItemId(String loginId, Integer itemId) {
         return cartRepository.findByLoginIdAndItemId(loginId, itemId).orElse(null);
     }

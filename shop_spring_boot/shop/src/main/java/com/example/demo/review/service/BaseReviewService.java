@@ -33,6 +33,12 @@ public class BaseReviewService implements ReviewService {
         return reviewRepository.findAll();
     }
 
+    // 단일 리뷰 조회
+    @Override
+    public Review findById(Integer id) {
+        return reviewRepository.findById(id).orElseThrow();
+    }
+
     // 리뷰 등록
     @Override
     public Review save(Integer itemId, String loginId, String name, String content, Integer rating) {

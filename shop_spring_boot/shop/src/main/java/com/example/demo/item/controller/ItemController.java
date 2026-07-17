@@ -1,7 +1,9 @@
 package com.example.demo.item.controller;
 
+import com.example.demo.common.auth.SessionAuth;
 import com.example.demo.item.entity.Item;
 import com.example.demo.item.service.ItemService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,8 +47,10 @@ public class ItemController {
             @RequestParam(required = false) MultipartFile image,
             @RequestParam(required = false) String imageUrl,
             @RequestParam(defaultValue = "all") String category,
-            @RequestParam(defaultValue = "NEW") String badge
+            @RequestParam(defaultValue = "NEW") String badge,
+            HttpServletRequest request
     ) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             Item item = itemService.save(name, price, discountRate, stock, description, image, imageUrl, category, badge);
             return ResponseEntity.ok(Map.of("success", true, "id", item.getId()));
@@ -67,8 +71,10 @@ public class ItemController {
             @RequestParam(required = false) MultipartFile image,
             @RequestParam(required = false) String imageUrl,
             @RequestParam(defaultValue = "all") String category,
-            @RequestParam(defaultValue = "NEW") String badge
+            @RequestParam(defaultValue = "NEW") String badge,
+            HttpServletRequest request
     ) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             itemService.update(id, name, price, discountRate, stock, description, image, imageUrl, category, badge);
             return ResponseEntity.ok(Map.of("success", true));
@@ -79,7 +85,8 @@ public class ItemController {
 
     // 상품 삭제 (관리자)
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Integer id) {
+    public ResponseEntity<?> delete(@PathVariable Integer id, HttpServletRequest request) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             itemService.delete(id);
             return ResponseEntity.ok(Map.of("success", true));
@@ -90,7 +97,8 @@ public class ItemController {
 
     // 재고 수정 (관리자)
     @PutMapping("/{id}/stock")
-    public ResponseEntity<?> updateStock(@PathVariable Integer id, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> updateStock(@PathVariable Integer id, @RequestBody Map<String, Object> body, HttpServletRequest request) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             Integer stock = (Integer) body.get("stock");
             itemService.updateStock(id, stock);
@@ -102,7 +110,8 @@ public class ItemController {
 
     // 할인율 수정 (관리자)
     @PutMapping("/{id}/discount")
-    public ResponseEntity<?> updateDiscountRate(@PathVariable Integer id, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> updateDiscountRate(@PathVariable Integer id, @RequestBody Map<String, Object> body, HttpServletRequest request) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             Double discountRate = ((Number) body.get("discountRate")).doubleValue();
             itemService.updateDiscountRate(id, discountRate);
@@ -115,8 +124,10 @@ public class ItemController {
     @PutMapping("/{id}/details")
     public ResponseEntity<?> updateDetails(
             @PathVariable Integer id,
-            @RequestBody Map<String, Object> body)
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request)
     {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             String detailsJson = (String) body.get("detailsJson");
             itemService.updateDetails(id, detailsJson);

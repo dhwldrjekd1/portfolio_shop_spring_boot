@@ -1,7 +1,9 @@
 package com.example.demo.notice.controller;
 
+import com.example.demo.common.auth.SessionAuth;
 import com.example.demo.notice.entity.Notice;
 import com.example.demo.notice.service.NoticeService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +27,8 @@ public class NoticeController {
 
     // 등록 (관리자)
     @PostMapping
-    public ResponseEntity<?> save(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> save(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             Notice notice = noticeService.save(
                     (String) body.get("title"),
@@ -40,7 +43,8 @@ public class NoticeController {
 
     // 수정 (관리자)
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody Map<String, Object> body, HttpServletRequest request) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             noticeService.update(
                     id,
@@ -56,7 +60,8 @@ public class NoticeController {
 
     // 삭제 (관리자)
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Integer id) {
+    public ResponseEntity<?> delete(@PathVariable Integer id, HttpServletRequest request) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         try {
             noticeService.delete(id);
             return ResponseEntity.ok(Map.of("success", true));

@@ -62,6 +62,11 @@ public class BaseOrderService implements OrderService {
         return orderRepository.findAllByOrderByCreatedDesc();
     }
 
+    @Override
+    public Order findById(Integer id) {
+        return orderRepository.findById(id).orElseThrow();
+    }
+
     // 주문 삭제 (관리자)
     @Override
     public void delete(Integer id) {

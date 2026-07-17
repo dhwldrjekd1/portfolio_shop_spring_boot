@@ -1,7 +1,9 @@
 package com.example.demo.review.controller;
 
+import com.example.demo.common.auth.SessionAuth;
 import com.example.demo.review.entity.Review;
 import com.example.demo.review.service.ReviewService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,17 +33,19 @@ public class ReviewController {
 
     // 전체 리뷰 조회 (관리자)
     @GetMapping("/all")
-    public ResponseEntity<?> findAll() {
+    public ResponseEntity<?> findAll(HttpServletRequest request) {
+        if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
         List<Review> list = reviewService.findAll();
         return ResponseEntity.ok(list);
     }
 
-    // 리뷰 등록
+    // 리뷰 등록 (로그인 필요, 본인 명의로만 등록)
     @PostMapping
-    public ResponseEntity<?> save(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> save(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        if (!SessionAuth.isLoggedIn(request)) return SessionAuth.unauthorized();
         try {
             Integer itemId  = (Integer) body.get("itemId");
-            String loginId  = (String) body.get("loginId");
+            String loginId  = SessionAuth.currentLoginId(request);
             String name     = (String) body.get("name");
             String content  = (String) body.get("content");
             Integer rating  = (Integer) body.get("rating");
@@ -52,10 +56,12 @@ public class ReviewController {
         }
     }
 
-    // 리뷰 수정
+    // 리뷰 수정 (작성자 본인 또는 관리자)
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody Map<String, Object> body, HttpServletRequest request) {
         try {
+            Review review = reviewService.findById(id);
+            if (!SessionAuth.isSelfOrAdmin(request, review.getLoginId())) return SessionAuth.forbidden();
             String content  = (String) body.get("content");
             Integer rating  = (Integer) body.get("rating");
             reviewService.update(id, content, rating);
@@ -65,10 +71,12 @@ public class ReviewController {
         }
     }
 
-    // 리뷰 삭제
+    // 리뷰 삭제 (작성자 본인 또는 관리자)
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Integer id) {
+    public ResponseEntity<?> delete(@PathVariable Integer id, HttpServletRequest request) {
         try {
+            Review review = reviewService.findById(id);
+            if (!SessionAuth.isSelfOrAdmin(request, review.getLoginId())) return SessionAuth.forbidden();
             reviewService.delete(id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {

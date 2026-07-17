@@ -428,6 +428,35 @@ spring.datasource.password=${DB_PASSWORD}
 Environment=DB_PASSWORD=실제_비밀번호
 ```
 
+---
+
+### [Case 18] 서버측 권한 검증 부재 — 전체 API 인가(Authorization) 우회 가능
+
+**문제** : `SecurityConfig`가 거의 모든 API를 `permitAll()`로 열어두고, 로그인 검사용 `LoginCheckInterceptor`는 어디에도 등록되어 있지 않아 실제로는 동작하지 않는 상태였음. 로그인/관리자 여부는 Vue 프론트엔드(`store.isLoggedIn`, `store.isAdmin`)가 버튼을 숨기는 화면 처리로만 구현되어 있었고, 로그인 자체도 서버 세션 없이 로그인 응답을 `localStorage`에 저장하는 방식이라 서버는 요청자가 누구인지 전혀 알 수 없었음  
+**원인** : "(관리자)" 주석만 달려 있을 뿐 컨트롤러 어디에도 실제 검증 코드가 없었음. 그 결과 `PUT /api/member/role/{loginId}`로 아무나 자기 계정을 관리자로 승격시키거나, `GET /api/member/list`로 전체 회원 PII를 비로그인 상태로 조회하거나, `GET /api/inquiry/all`로 전체 고객 문의를 열람하는 등 curl로 직접 호출하면 그대로 뚫리는 상태였음  
+**해결** :
+1. 로그인 성공 시 `HttpSession`에 `loginId`/`role` 저장(로그아웃 시 세션 무효화)
+2. `SessionAuth` 헬퍼(`isAdmin`, `isSelfOrAdmin`, `isLoggedIn`)를 만들고, 관리자 전용/본인 전용 API 전체(회원·상품·공지·QnA·주문·문의·리뷰·장바구니·위시리스트·커뮤니티 게시판)에 서버측 검증 추가
+3. 세션 쿠키에 `HttpOnly` + `SameSite=Lax` 설정 추가
+
+```java
+// Before — 컨트롤러에 실제 검증 없음, 주석만 존재
+// role 변경 (관리자)
+@PutMapping("/role/{loginId}")
+public ResponseEntity<?> updateRole(@PathVariable String loginId, @RequestBody Map<String, String> body) {
+    memberService.updateRole(loginId, body.get("role"));
+    return ResponseEntity.ok(Map.of("success", true));
+}
+
+// After — 세션 기반 서버측 검증 추가
+@PutMapping("/role/{loginId}")
+public ResponseEntity<?> updateRole(@PathVariable String loginId, @RequestBody Map<String, String> body, HttpServletRequest request) {
+    if (!SessionAuth.isAdmin(request)) return SessionAuth.forbidden();
+    memberService.updateRole(loginId, body.get("role"));
+    return ResponseEntity.ok(Map.of("success", true));
+}
+```
+
 <br>
 
 ---

@@ -7,9 +7,11 @@ import java.util.List;
 public interface BoardService {
     Board save(String title, String content, String loginId, String name);
     List<Board> findAll();
+    Board findById(Integer id);
     void update(Integer id, String title, String content);
     void delete(Integer id);
     Comment saveComment(Integer boardId, String content, String loginId, String name);
     List<Comment> findComments(Integer boardId);
+    Comment findCommentById(Integer id);
     void deleteComment(Integer id);
 }

@@ -5,6 +5,7 @@ import java.util.List;
 
 public interface CartService {
     List<Cart> findAll(String loginId);
+    Cart findById(Integer id);
     Cart findByLoginIdAndItemId(String loginId, Integer itemId);
     void save(String loginId, Integer itemId, Integer quantity, String color, String size);
     void updateQuantity(Integer id, Integer quantity);

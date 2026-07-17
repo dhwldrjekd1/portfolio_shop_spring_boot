@@ -12,6 +12,7 @@ public interface InquiryService {
     Inquiry save(String type, String title, String content, String loginId, String name);
     List<Inquiry> findByLoginId(String loginId);
     List<Inquiry> findAll();
+    Inquiry findById(Integer id);
     void reply(Integer id, String reply);
     void delete(Integer id);
     void update(Integer id, String content);
