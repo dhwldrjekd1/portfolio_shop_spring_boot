@@ -519,6 +519,29 @@ return ApiError.badRequest(e);
 
 중복 가입 시도(DB unique 제약 위반)로 재현 테스트 → 클라이언트에는 "요청을 처리하지 못했습니다..." 일반 메시지만 노출되고, 서버 로그에는 `DataIntegrityViolationException` 상세가 남는 것 확인. 존재하지 않는 계정으로 비밀번호 찾기 시도 시 기존 안내 메시지는 그대로 노출되는 것도 확인.
 
+---
+
+### [Case 22] 회원가입/비밀번호 변경에 서버측 비밀번호 정책 부재
+
+**문제** : `/api/member/register`, `/api/member/update/{loginId}`가 비밀번호 길이·복잡도를 전혀 검증하지 않아 `a`, `1234` 같은 값도 그대로 암호화되어 저장 가능했음. 프론트엔드도 8자 이상 여부만 확인하고 있었음  
+**원인** : 서비스 계층에 비밀번호 정책 검증 로직이 없었음  
+**해결** : 공통 검증기 `PasswordPolicy`를 추가해 8자 이상 + 영문 소문자·숫자·특수문자 각 최소 1개 포함을 서버에서 강제(`BaseMemberService.save/update`). 프론트엔드(회원가입, 마이페이지 비밀번호 변경)에도 동일 기준으로 사전 검증 추가해 불필요한 왕복 없이 즉시 안내
+
+```java
+public static void validate(String password) {
+    if (password == null || password.length() < 8) {
+        throw new IllegalArgumentException("비밀번호는 8자 이상이어야 합니다.");
+    }
+    if (!LOWERCASE.matcher(password).find()
+            || !DIGIT.matcher(password).find()
+            || !SPECIAL.matcher(password).find()) {
+        throw new IllegalArgumentException("비밀번호는 영문 소문자, 숫자, 특수문자를 모두 포함해야 합니다.");
+    }
+}
+```
+
+curl로 소문자만/8자 미만/특수문자 없음 3가지 위반 케이스 모두 거부, 정책 충족 비밀번호는 정상 가입되는 것 확인.
+
 <br>
 
 ---

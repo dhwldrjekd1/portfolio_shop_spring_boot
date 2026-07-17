@@ -1,5 +1,6 @@
 package com.example.demo.member.service;
 
+import com.example.demo.common.validation.PasswordPolicy;
 import com.example.demo.member.entity.Member;
 import com.example.demo.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class BaseMemberService implements MemberService {
     // 회원 데이터 저장
     @Override
     public void save(String name, String loginId, String loginPw, String email, String phone, String address, String address_detail, String zipcode) {
+        PasswordPolicy.validate(loginPw);
         // 비밀번호 암호화 후 저장
         String encodedPw = passwordEncoder.encode(loginPw);
         Member member = new Member(name, loginId, encodedPw, email, phone, address, address_detail, zipcode);
@@ -49,8 +51,9 @@ public class BaseMemberService implements MemberService {
     @Override
     public void update(String loginId, Map<String, String> body) {
         Member member = memberRepository.findByLoginId(loginId).orElseThrow();
-        // 비밀번호 변경 시 암호화
+        // 비밀번호 변경 시 정책 검증 후 암호화
         if (body.get("loginPw") != null && !body.get("loginPw").isEmpty()) {
+            PasswordPolicy.validate(body.get("loginPw"));
             body = new java.util.HashMap<>(body);
             body.put("loginPw", passwordEncoder.encode(body.get("loginPw")));
         }
