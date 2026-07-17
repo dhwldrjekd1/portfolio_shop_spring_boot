@@ -35,19 +35,18 @@
 
 ```
 src/main/java/com/example/demo/
-├── account/         # 로그인 / 회원가입 / 세션 처리
-├── member/          # 회원 정보 조회·수정·탈퇴, 등급 관리
+├── member/          # 회원가입/로그인/로그아웃, 정보 조회·수정·탈퇴, 등급 관리
 ├── item/            # 상품 목록, 상세, 필터, 재고
 ├── cart/            # 장바구니 CRUD
-├── order/           # 주문 생성, 취소, 관리자 주문 관리
+├── order/           # 주문 생성(서버측 금액 검증), 취소, 관리자 주문 관리
 ├── payment/         # 토스페이먼츠 결제 연동 (TossConfig, TossController)
 ├── review/          # 리뷰 작성·수정·삭제, 중복 방지
 ├── board/           # 커뮤니티 게시판
 ├── notice/          # 공지사항
 ├── qna/             # QnA 게시판
 ├── inquiry/         # 고객문의
-├── interceptor/     # 로그인 체크 인터셉터
-└── config/          # Security, JPA, Web, SPA 라우팅 설정
+├── common/          # SessionAuth, ApiError, PasswordPolicy 등 공통 헬퍼
+└── config/          # Security(CSRF 포함), JPA, Web, SPA 라우팅 설정
 ```
 
 ---
