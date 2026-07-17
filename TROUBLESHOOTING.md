@@ -542,6 +542,35 @@ public static void validate(String password) {
 
 curl로 소문자만/8자 미만/특수문자 없음 3가지 위반 케이스 모두 거부, 정책 충족 비밀번호는 정상 가입되는 것 확인.
 
+---
+
+### [Case 23] CSRF 방어 부재 + 커뮤니티 게시판 화이트리스트 경로 오타로 전체 차단
+
+**문제 1(CSRF)** : `SecurityConfig`가 `.csrf(disable)`로 CSRF 방어를 완전히 꺼놓은 상태였음. `SameSite=Lax` 세션 쿠키(Case 18)로 상당 부분 방어되긴 하지만 토큰 기반 방어는 아니었음  
+**문제 2(경로 오타, CSRF 작업 중 같은 파일에서 발견)** : 화이트리스트에 `/api/board/**`가 등록되어 있었는데 실제 컨트롤러는 `@RequestMapping("/api/community")`라서 전혀 매칭되지 않음 → 커뮤니티 게시판 전체(조회 포함)가 `anyRequest().authenticated()`에 걸려 관리자를 포함해 아무도 접근 못 하는 상태였음  
+**해결** :
+1. Spring Security 내장 CSRF를 다시 활성화 — `CookieCsrfTokenRepository`로 `XSRF-TOKEN` 쿠키를 발급하고, SPA에서도 쿠키가 정상 내려가도록 매 요청마다 토큰 로드를 강제하는 `CsrfCookieFilter` 추가(Spring 공식 SPA 연동 가이드 패턴)
+2. 화이트리스트의 `/api/board/**`를 실제 경로인 `/api/community/**`로 수정(안 쓰이던 `/api/comment/**` 항목 제거)
+3. 프론트엔드는 `fetch`를 한 곳(`csrf.js`)에서 감싸 상태변경 요청(POST/PUT/DELETE)에 쿠키의 토큰 값을 `X-XSRF-TOKEN` 헤더로 자동 첨부 — 수십 곳의 개별 fetch 호출을 손대지 않음
+
+```java
+.csrf(csrf -> csrf
+        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+)
+.addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
+```
+
+```js
+// csrf.js — fetch 전역 래핑
+if (MUTATING_METHODS.has(method)) {
+  const token = getCookie('XSRF-TOKEN')
+  headers.set('X-XSRF-TOKEN', token)
+}
+```
+
+curl로 최초 GET → 쿠키 발급 → 토큰 없이 POST(403 차단) → 토큰 포함 POST(정상 처리) 확인. 회원가입 → 로그인 → 위시리스트 추가 → 커뮤니티 글쓰기 → 로그아웃 전 과정을 토큰 포함 요청으로 재현해 정상 동작 확인, `/api/community` 조회도 200으로 복구된 것 확인.
+
 <br>
 
 ---

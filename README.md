@@ -170,7 +170,11 @@ reviews      -- 리뷰
 
 ```java
 http
-  .csrf(AbstractHttpConfigurer::disable)        // REST API 방식
+  .csrf(csrf -> csrf
+    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+    .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+  )
+  .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
   .authorizeHttpRequests(auth -> auth
     .requestMatchers("/api/member/**").permitAll()
     .requestMatchers("/api/item/**").permitAll()
@@ -178,6 +182,7 @@ http
     .requestMatchers("/api/cart/**").permitAll()
     .requestMatchers("/api/wishlist/**").permitAll()
     .requestMatchers("/api/order/**").permitAll()
+    .requestMatchers("/api/community/**").permitAll()
     // ... 각 API 허용
     .anyRequest().authenticated()
   )
@@ -192,6 +197,8 @@ http
 컨트롤러 예외 처리는 `ApiError.badRequest(e)`를 통해 응답합니다. DB/JPA 계층 예외(`DataAccessException`)는 서버 로그에만 상세를 남기고 클라이언트에는 일반화된 메시지를 반환해 SQL/테이블 구조 등 내부 정보가 노출되지 않도록 합니다. 서비스에서 직접 던지는 업무 예외 메시지(예: 유효성 검증 실패 안내)는 그대로 노출됩니다.
 
 비밀번호는 `PasswordPolicy`로 서버측 검증됩니다 — 8자 이상 + 영문 소문자·숫자·특수문자 각 최소 1개 포함(회원가입, 비밀번호 변경 모두 적용).
+
+CSRF는 Spring Security 내장 기능(쿠키 기반 토큰, `XSRF-TOKEN`)으로 방어합니다. 프론트엔드는 `csrf.js`가 `fetch`를 감싸 상태변경 요청(POST/PUT/DELETE)마다 쿠키의 토큰을 `X-XSRF-TOKEN` 헤더로 자동 첨부합니다.
 
 ```java
 // 관리자 전용 API 예시

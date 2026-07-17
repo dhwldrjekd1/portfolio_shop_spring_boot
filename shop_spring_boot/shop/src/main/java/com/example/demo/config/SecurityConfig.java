@@ -9,6 +9,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -29,7 +32,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                )
+                .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/web03/**",
@@ -45,9 +52,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/order/**").permitAll()
                         .requestMatchers("/api/notice/**").permitAll()
                         .requestMatchers("/api/qna/**").permitAll()
-                        .requestMatchers("/api/board/**").permitAll()
+                        .requestMatchers("/api/community/**").permitAll()
                         .requestMatchers("/api/inquiry/**").permitAll()
-                        .requestMatchers("/api/comment/**").permitAll()
                         .requestMatchers("/api/payment/**").permitAll()
                         .anyRequest().authenticated()
                 )
