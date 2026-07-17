@@ -457,6 +457,28 @@ public ResponseEntity<?> updateRole(@PathVariable String loginId, @RequestBody M
 }
 ```
 
+---
+
+### [Case 19] `GENERATED ALWAYS AS IDENTITY` 컬럼 저장 시 회원가입 등 신규 등록 전체 실패
+
+**문제** : 위 Case 18 배포 후 실제 동작 테스트 중 회원가입 API가 `cannot insert a non-DEFAULT value into column "id"` 오류로 500 실패하는 것을 발견. 같은 방식으로 대조해보니 `members`뿐 아니라 `notices`/`qnas`/`inquiries`/`boards`/`comments` 6개 테이블 모두 신규 저장(`save()`)이 전부 실패하는 상태였음(기존 데이터 조회는 정상 동작해 겉으로는 드러나지 않았음)  
+**원인** : 해당 6개 테이블의 `id` 컬럼이 DB에서 `GENERATED ALWAYS AS IDENTITY`(애플리케이션이 값을 지정하면 무조건 거부)로 생성되어 있는데, 대응하는 엔티티들은 `@GeneratedValue`에 전략을 명시하지 않아 Hibernate 6 기본값(SEQUENCE 계열)이 적용되어 Java 쪽에서 자체적으로 ID를 생성해 INSERT에 포함시키려 했고, DB가 이를 거부함. `items`/`reviews`는 과거 Case 3에서 이미 `IDENTITY` 전략으로 맞춰져 있어 문제 없었음  
+**해결** : 6개 엔티티(`Member`, `Notice`, `Qna`, `Inquiry`, `Board`, `Comment`) 모두 `Item`/`Review`와 동일하게 `@GeneratedValue(strategy = GenerationType.IDENTITY)`로 명시
+
+```java
+// Before — Hibernate 6 기본 전략이 identity 컬럼과 충돌
+@Id
+@GeneratedValue
+private Integer id;
+
+// After — DB의 GENERATED ALWAYS AS IDENTITY와 일치시킴
+@Id
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+private Integer id;
+```
+
+실제 회원가입 → 로그인 → 문의 등록 → 위시리스트 추가 → 탈퇴까지 curl로 재현하여 정상 동작 확인.
+
 <br>
 
 ---
