@@ -39,8 +39,9 @@ public class OrderController {
             String cardNumber = (String) body.get("cardNumber");
             Integer amount = (Integer) body.get("amount");
             List<Map<String, Object>> items = (List<Map<String, Object>>) body.get("items");
+            String tossOrderId = (String) body.get("tossOrderId");
 
-            Order order = orderService.save(loginId, name, address, payment, cardNumber, amount, items);
+            Order order = orderService.save(loginId, name, address, payment, cardNumber, amount, items, tossOrderId);
             return ResponseEntity.ok(Map.of("success", true, "id", order.getId()));
         } catch (Exception e) {
             return ApiError.badRequest(e);

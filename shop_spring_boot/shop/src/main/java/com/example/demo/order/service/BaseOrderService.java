@@ -8,11 +8,14 @@ import com.example.demo.member.service.MemberService;
 import com.example.demo.order.entity.Order;
 import com.example.demo.order.entity.OrderItem;
 import com.example.demo.order.repository.OrderRepository;
+import com.example.demo.payment.entity.TossPayment;
+import com.example.demo.payment.repository.TossPaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -23,14 +26,26 @@ public class BaseOrderService implements OrderService {
     private final ItemRepository itemRepository;
     private final StaticProductCatalog staticProductCatalog;
     private final MemberService memberService; // 등급 업데이트용
+    private final TossPaymentRepository tossPaymentRepository;
+
+    // 허용된 결제 수단 목록 - 대소문자/공백 변형으로 "toss" 검증을 우회하는 것을 막기 위해
+    // 결제 수단 문자열을 정규화(trim + lowercase)한 뒤 이 목록과 비교한다.
+    private static final Set<String> ALLOWED_PAYMENTS = Set.of("toss", "kakao", "naver", "bank");
 
     @Override
     @Transactional
-    public Order save(String loginId, String name, String address, String payment, String cardNumber, Integer amount, List<Map<String, Object>> items) {
+    public Order save(String loginId, String name, String address, String payment, String cardNumber, Integer amount, List<Map<String, Object>> items, String tossOrderId) {
+        String normalizedPayment = payment == null ? null : payment.trim().toLowerCase();
+        if (normalizedPayment == null || !ALLOWED_PAYMENTS.contains(normalizedPayment)) {
+            throw new IllegalArgumentException("지원하지 않는 결제 수단입니다.");
+        }
         validateAmount(amount, items);
+        if ("toss".equals(normalizedPayment)) {
+            verifyTossPayment(tossOrderId, amount);
+        }
         decreaseStockForOrder(items);
 
-        Order order = new Order(loginId, name, address, payment, cardNumber, amount);
+        Order order = new Order(loginId, name, address, normalizedPayment, cardNumber, amount);
         orderRepository.save(order);
 
         // 주문 상품 저장
@@ -62,6 +77,8 @@ public class BaseOrderService implements OrderService {
     // 결제수단과 무관하게, 클라이언트가 보낸 금액이 실제 상품가(할인 반영) 합계 + 배송비와 일치하는지 검증.
     // 상품은 DB(items)에 없으면 정적 시드 카탈로그(products.json)에서 조회한다.
     private void validateAmount(Integer amount, List<Map<String, Object>> items) {
+        // 프론트(store.getDiscountedPrice)와 동일하게, 할인이 없는 상품은 원가를 반올림하지 않고 그대로 합산한다.
+        // (할인 상품만 100원 단위로 반올림 - 프론트와 정확히 같은 계산이어야 금액 검증 오차가 생기지 않는다)
         double subtotal = 0;
         for (Map<String, Object> item : items) {
             Integer itemId = (Integer) item.get("itemId");
@@ -94,6 +111,26 @@ public class BaseOrderService implements OrderService {
 
         if (amount == null || Math.abs(expected - amount) > 1) {
             throw new IllegalArgumentException("주문 금액이 올바르지 않습니다.");
+        }
+    }
+
+    // 토스 결제 주문(payment="toss")은 실제 승인된 결제와 연결되어야만 주문을 생성할 수 있도록 검증.
+    // - 결제 없이 /api/order를 직접 호출해 주문을 만드는 것을 막고,
+    // - 동일한 결제(paymentKey)로 여러 주문이 생성되는 것(재사용)을 막는다.
+    private void verifyTossPayment(String tossOrderId, Integer amount) {
+        if (tossOrderId == null || tossOrderId.isBlank()) {
+            throw new IllegalStateException("결제 승인 정보가 없습니다.");
+        }
+        TossPayment payment = tossPaymentRepository.findByTossOrderId(tossOrderId)
+                .orElseThrow(() -> new IllegalStateException("결제 승인 내역을 찾을 수 없습니다."));
+        if (!payment.getAmount().equals(amount)) {
+            throw new IllegalStateException("결제 금액이 주문 금액과 일치하지 않습니다.");
+        }
+        // used=false → true 전환을 원자적 UPDATE로 처리 - 동시에 들어온 두 요청이 모두
+        // "아직 사용 안 됨"을 확인한 뒤 둘 다 통과하는 레이스를 막는다 (재고 차감과 동일한 패턴).
+        int updated = tossPaymentRepository.markUsedIfUnused(tossOrderId);
+        if (updated == 0) {
+            throw new IllegalStateException("이미 사용된 결제입니다.");
         }
     }
 

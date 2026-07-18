@@ -2,6 +2,8 @@ package com.example.demo.payment.controller;
 
 import com.example.demo.common.error.ApiError;
 import com.example.demo.payment.TossConfig;
+import com.example.demo.payment.entity.TossPayment;
+import com.example.demo.payment.repository.TossPaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +21,7 @@ import java.util.Map;
 public class TossController {
 
     private final TossConfig tossConfig;
+    private final TossPaymentRepository tossPaymentRepository;
 
     // 클라이언트 키 반환 (Vue에서 토스 위젯 초기화 시 사용)
     @GetMapping("/client-key")
@@ -58,7 +61,12 @@ public class TossController {
                     Map.class
             );
 
-            // 결제 성공
+            // 결제 승인 성공 - 이후 주문 생성 시 대조할 수 있도록 승인 기록을 저장 (주문과의 연결/중복 사용 방지용)
+            int confirmedAmount = (amount instanceof Number)
+                    ? ((Number) amount).intValue()
+                    : Integer.parseInt(String.valueOf(amount));
+            tossPaymentRepository.save(new TossPayment(orderId, paymentKey, confirmedAmount));
+
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "data",    response.getBody()

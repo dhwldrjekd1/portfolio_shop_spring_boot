@@ -8,6 +8,9 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,6 +22,12 @@ public class BaseMemberService implements MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder; // 비밀번호 암호화
     private final JavaMailSender mailSender;
+
+    // 임시 비밀번호 생성용
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final String LOWERCASE_CHARS = "abcdefghijklmnopqrstuvwxyz";
+    private static final String DIGIT_CHARS = "0123456789";
+    private static final String SPECIAL_CHARS = "!@#$%^&*";
 
     // 회원 데이터 저장
     @Override
@@ -69,8 +78,8 @@ public class BaseMemberService implements MemberService {
         if (!member.getEmail().equals(email)) {
             throw new RuntimeException("아이디 또는 이메일이 일치하지 않습니다.");
         }
-        // 임시 비밀번호 생성 (영문+숫자 8자리)
-        String tempPw = java.util.UUID.randomUUID().toString().substring(0, 8);
+        // 임시 비밀번호 생성 - 사이트 자체 비밀번호 정책(영문 소문자/숫자/특수문자 포함, 8자 이상)을 항상 만족하도록 생성
+        String tempPw = generateTempPassword();
         // 임시 비밀번호 암호화 후 저장
         Map<String, String> body = Map.of("loginPw", passwordEncoder.encode(tempPw));
         member.update(body);
@@ -81,6 +90,24 @@ public class BaseMemberService implements MemberService {
         message.setSubject("[Gentle Monster] 임시 비밀번호 안내");
         message.setText("요청하신 임시 비밀번호는 [" + tempPw + "] 입니다. 로그인 후 반드시 비밀번호를 변경해주세요.");
         mailSender.send(message);
+    }
+
+    // 영문 소문자/숫자/특수문자를 각각 최소 1개 포함하도록 보장하는 임시 비밀번호 생성 (PasswordPolicy와 항상 일치)
+    private String generateTempPassword() {
+        List<Character> chars = new ArrayList<>();
+        chars.add(LOWERCASE_CHARS.charAt(RANDOM.nextInt(LOWERCASE_CHARS.length())));
+        chars.add(DIGIT_CHARS.charAt(RANDOM.nextInt(DIGIT_CHARS.length())));
+        chars.add(SPECIAL_CHARS.charAt(RANDOM.nextInt(SPECIAL_CHARS.length())));
+
+        String pool = LOWERCASE_CHARS + DIGIT_CHARS + SPECIAL_CHARS;
+        for (int i = 0; i < 7; i++) {
+            chars.add(pool.charAt(RANDOM.nextInt(pool.length())));
+        }
+        Collections.shuffle(chars, RANDOM);
+
+        StringBuilder sb = new StringBuilder();
+        chars.forEach(sb::append);
+        return sb.toString();
     }
 
     // 회원목록 (관리자)
@@ -123,8 +150,6 @@ public class BaseMemberService implements MemberService {
             grade = "골드";
         } else if (totalAmount >= 1000000) {
             grade = "실버";
-        } else if (totalAmount >= 500000) {
-            grade = "브론즈";
         } else {
             grade = "브론즈";
         }
