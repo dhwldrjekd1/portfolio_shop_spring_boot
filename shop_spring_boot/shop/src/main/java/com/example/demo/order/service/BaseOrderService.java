@@ -10,6 +10,7 @@ import com.example.demo.order.entity.OrderItem;
 import com.example.demo.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 
@@ -24,8 +25,10 @@ public class BaseOrderService implements OrderService {
     private final MemberService memberService; // 등급 업데이트용
 
     @Override
+    @Transactional
     public Order save(String loginId, String name, String address, String payment, String cardNumber, Integer amount, List<Map<String, Object>> items) {
         validateAmount(amount, items);
+        decreaseStockForOrder(items);
 
         Order order = new Order(loginId, name, address, payment, cardNumber, amount);
         orderRepository.save(order);
@@ -63,6 +66,9 @@ public class BaseOrderService implements OrderService {
         for (Map<String, Object> item : items) {
             Integer itemId = (Integer) item.get("itemId");
             Integer quantity = (Integer) item.get("quantity");
+            if (quantity == null || quantity <= 0) {
+                throw new IllegalArgumentException("주문 수량이 올바르지 않습니다.");
+            }
 
             double price;
             double discountRate;
@@ -91,6 +97,22 @@ public class BaseOrderService implements OrderService {
         }
     }
 
+    // 주문 생성 시점에 재고를 원자적으로 차감. 동시 주문으로 재고가 이미 소진된 경우 예외 발생 → 트랜잭션 롤백.
+    // 정적 시드 카탈로그 상품(DB에 없는 상품)은 재고 추적 대상이 아니므로 건너뛴다.
+    private void decreaseStockForOrder(List<Map<String, Object>> items) {
+        for (Map<String, Object> item : items) {
+            Integer itemId = (Integer) item.get("itemId");
+            Integer quantity = (Integer) item.get("quantity");
+            if (!itemRepository.existsById(itemId)) continue;
+
+            int updated = itemRepository.decreaseStockIfAvailable(itemId, quantity);
+            if (updated == 0) {
+                String itemName = (String) item.get("itemName");
+                throw new IllegalStateException("재고가 부족합니다: " + (itemName != null ? itemName : itemId));
+            }
+        }
+    }
+
     @Override
     public List<Order> findAll(String loginId) {
         return orderRepository.findByLoginIdOrderByCreatedDesc(loginId);
@@ -106,38 +128,35 @@ public class BaseOrderService implements OrderService {
         return orderRepository.findById(id).orElseThrow();
     }
 
-    // 주문 삭제 (관리자)
+    // 주문 삭제 (관리자) - 취소되지 않은 주문이면 삭제 전 재고를 복구한다 (재고는 주문 생성 시점에 차감되므로).
     @Override
+    @Transactional
     public void delete(Integer id) {
+        Order order = orderRepository.findById(id).orElse(null);
+        if (order != null && !"취소".equals(order.getStatus())) {
+            for (OrderItem item : order.getOrderItems()) {
+                if (itemRepository.existsById(item.getItemId())) {
+                    itemRepository.increaseStock(item.getItemId(), item.getQuantity());
+                }
+            }
+        }
         orderRepository.deleteById(id);
     }
 
     @Override
+    @Transactional
     public void updateStatus(Integer id, String status) {
-        Order order = orderRepository.findById(id).orElseThrow();
+        // 행 잠금 조회 - 동시에 들어온 취소 요청이 재고를 이중으로 복구하지 않도록 함
+        Order order = orderRepository.findByIdForUpdate(id).orElseThrow();
         String prevStatus = order.getStatus();
         order.updateStatus(status);
         orderRepository.save(order);
 
-        // 배송완료 시 재고 차감
-        if ("배송완료".equals(status) && !"배송완료".equals(prevStatus)) {
+        // 취소 시 재고 복구 (재고는 주문 생성 시점에 이미 차감했으므로, 취소되지 않았던 주문이 취소될 때 항상 복구)
+        if ("취소".equals(status) && !"취소".equals(prevStatus)) {
             for (OrderItem item : order.getOrderItems()) {
-                Item dbItem = itemRepository.findById(item.getItemId()).orElse(null);
-                if (dbItem != null) {
-                    int newStock = Math.max(0, dbItem.getStock() - item.getQuantity());
-                    dbItem.updateStock(newStock);
-                    itemRepository.save(dbItem);
-                }
-            }
-        }
-
-        // 취소 시 재고 복구 (배송완료였던 경우만)
-        if ("취소".equals(status) && "배송완료".equals(prevStatus)) {
-            for (OrderItem item : order.getOrderItems()) {
-                Item dbItem = itemRepository.findById(item.getItemId()).orElse(null);
-                if (dbItem != null) {
-                    dbItem.updateStock(dbItem.getStock() + item.getQuantity());
-                    itemRepository.save(dbItem);
+                if (itemRepository.existsById(item.getItemId())) {
+                    itemRepository.increaseStock(item.getItemId(), item.getQuantity());
                 }
             }
         }

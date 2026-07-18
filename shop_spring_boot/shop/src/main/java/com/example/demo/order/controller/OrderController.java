@@ -80,12 +80,16 @@ public class OrderController {
             return ApiError.badRequest(e);
         }
     }
-    // 주문 취소 (본인 또는 관리자)
+    // 주문 취소 (본인 또는 관리자) — 주문접수/배송중 상태에서만 가능
     @PutMapping("/{id}/cancel")
     public ResponseEntity<?> cancel(@PathVariable Integer id, HttpServletRequest request) {
         try {
             Order order = orderService.findById(id);
             if (!SessionAuth.isSelfOrAdmin(request, order.getLoginId())) return SessionAuth.forbidden();
+            String status = order.getStatus();
+            if (!"주문접수".equals(status) && !"배송중".equals(status)) {
+                return ApiError.badRequest(new IllegalStateException("주문접수 또는 배송중 상태에서만 취소할 수 있습니다."));
+            }
             orderService.updateStatus(id, "취소");
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
