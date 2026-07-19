@@ -229,11 +229,36 @@ DB 비밀번호는 파일에 직접 적지 않고 환경변수 `DB_PASSWORD`로 
 export DB_PASSWORD=본인_postgres_비밀번호
 ./gradlew bootRun
 
-# systemd 서비스로 운영 시 (gm-backend.service 예시)
-Environment=DB_PASSWORD=본인_postgres_비밀번호
+# systemd 서비스로 운영 시 - 유닛 파일에 평문으로 적지 않고, 별도 환경변수 파일을 root 전용
+# 권한(600)으로 만들어 EnvironmentFile로 불러온다 (유닛 파일은 systemctl show로 누구나 조회 가능하므로
+# Environment=DB_PASSWORD=... 처럼 직접 적으면 비밀번호가 그대로 노출된다)
+# /etc/default/gm-backend (600, root:root)
+DB_PASSWORD=본인_postgres_비밀번호
+
+# gm-backend.service
+EnvironmentFile=/etc/default/gm-backend
 ```
 
 토스페이먼츠 키, 메일 발송(SMTP) 정보도 같은 파일에서 채워야 결제/비밀번호 찾기 기능이 정상 동작합니다.
+
+---
+
+## 로컬 개발 환경 설정 (처음 셋업 시)
+
+`application.properties.example` 복사 + 환경변수 주입 외에, 아래 항목들은 코드/문서에 자동화되어 있지 않아 직접 준비해야 합니다.
+
+1. **DB 자체를 미리 생성해야 함** — `spring.jpa.hibernate.ddl-auto=update`는 DB *안의 테이블*만 자동 생성하며, DB 자체는 만들어주지 않습니다. 로컬 Postgres에 먼저 생성해야 합니다.
+   ```bash
+   createdb -U postgres shop
+   ```
+2. **업로드 경로를 로컬 경로로 변경** — `file.upload-dir`이 예시 파일에 이 서버 전용 절대경로(`/var/www/gm_backend/uploads`)로 들어있습니다. 로컬 환경에 맞는 경로로 바꾸고, 해당 디렉토리를 미리 만들어둬야 상품 이미지 업로드가 정상 동작합니다.
+   ```properties
+   file.upload-dir=/원하는/로컬/경로
+   ```
+   ```bash
+   mkdir -p /원하는/로컬/경로
+   ```
+3. **프론트엔드를 별도 dev 서버로 띄우면 API 연동이 안 됨** — `vite.config.js`에 백엔드로 가는 dev 프록시가 설정되어 있지 않아, `npm run dev`로 프론트만 띄우면 `/api/**` 요청이 그대로 실패합니다. 프론트 변경사항을 API와 함께 확인하려면 `npm run build` 후 결과물을 백엔드의 `src/main/resources/static/web03`에 복사하고 백엔드를 재시작해서 확인해야 합니다 (실제 배포와 동일한 방식).
 
 ---
 
