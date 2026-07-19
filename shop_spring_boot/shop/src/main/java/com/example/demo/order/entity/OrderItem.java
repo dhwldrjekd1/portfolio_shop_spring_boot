@@ -25,6 +25,10 @@ public class OrderItem {
 
     private String size; // 사이즈
 
+    // 주문 당시 단가(할인 반영, 100원 단위 반올림). 이후 상품 가격/할인율이 바뀌어도 과거 매출 통계가
+    // 흔들리지 않도록 주문 시점 값을 고정 저장한다. 컬럼 추가 이전에 생성된 주문은 null.
+    private Integer price;
+
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
@@ -32,12 +36,13 @@ public class OrderItem {
 
     public OrderItem() {}
 
-    public OrderItem(Integer itemId, Integer quantity, String itemName, String color, String size, Order order) {
+    public OrderItem(Integer itemId, Integer quantity, String itemName, String color, String size, Integer price, Order order) {
         this.itemId = itemId;
         this.quantity = quantity;
         this.itemName = itemName;
         this.color = color;
         this.size = size;
+        this.price = price;
         this.order = order;
     }
 }

@@ -48,14 +48,15 @@ public class BaseOrderService implements OrderService {
         Order order = new Order(loginId, name, address, normalizedPayment, cardNumber, amount);
         orderRepository.save(order);
 
-        // 주문 상품 저장
+        // 주문 상품 저장 (단가는 validateAmount와 동일한 기준으로 주문 시점 값을 고정 저장)
         for (Map<String, Object> item : items) {
             Integer itemId = (Integer) item.get("itemId");
             Integer quantity = (Integer) item.get("quantity");
             String itemName = (String) item.get("itemName");
             String color = (String) item.get("color");
             String size = (String) item.get("size");
-            OrderItem orderItem = new OrderItem(itemId, quantity, itemName, color, size, order);
+            Integer unitPrice = (int) Math.round(getUnitPrice(itemId));
+            OrderItem orderItem = new OrderItem(itemId, quantity, itemName, color, size, unitPrice, order);
             order.getOrderItems().add(orderItem);
         }
         orderRepository.save(order);
@@ -77,8 +78,6 @@ public class BaseOrderService implements OrderService {
     // 결제수단과 무관하게, 클라이언트가 보낸 금액이 실제 상품가(할인 반영) 합계 + 배송비와 일치하는지 검증.
     // 상품은 DB(items)에 없으면 정적 시드 카탈로그(products.json)에서 조회한다.
     private void validateAmount(Integer amount, List<Map<String, Object>> items) {
-        // 프론트(store.getDiscountedPrice)와 동일하게, 할인이 없는 상품은 원가를 반올림하지 않고 그대로 합산한다.
-        // (할인 상품만 100원 단위로 반올림 - 프론트와 정확히 같은 계산이어야 금액 검증 오차가 생기지 않는다)
         double subtotal = 0;
         for (Map<String, Object> item : items) {
             Integer itemId = (Integer) item.get("itemId");
@@ -86,24 +85,7 @@ public class BaseOrderService implements OrderService {
             if (quantity == null || quantity <= 0) {
                 throw new IllegalArgumentException("주문 수량이 올바르지 않습니다.");
             }
-
-            double price;
-            double discountRate;
-            Item dbItem = itemRepository.findById(itemId).orElse(null);
-            if (dbItem != null) {
-                price = dbItem.getPrice();
-                discountRate = dbItem.getDiscountRate() != null ? dbItem.getDiscountRate() : 0;
-            } else {
-                StaticProductCatalog.Price staticPrice = staticProductCatalog.find(itemId)
-                        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품이 포함되어 있습니다."));
-                price = staticPrice.price();
-                discountRate = staticPrice.discountRate();
-            }
-
-            double unitPrice = discountRate > 0
-                    ? Math.round((price * (1 - discountRate / 100)) / 100.0) * 100
-                    : price;
-            subtotal += unitPrice * quantity;
+            subtotal += getUnitPrice(itemId) * quantity;
         }
 
         double shipping = subtotal >= 50000 ? 0 : 3000;
@@ -112,6 +94,28 @@ public class BaseOrderService implements OrderService {
         if (amount == null || Math.abs(expected - amount) > 1) {
             throw new IllegalArgumentException("주문 금액이 올바르지 않습니다.");
         }
+    }
+
+    // 상품 단가(할인 반영) 계산. 프론트(store.getDiscountedPrice)와 동일하게, 할인이 없는 상품은
+    // 원가를 반올림하지 않고 그대로 쓰고, 할인 상품만 100원 단위로 반올림한다 - 프론트와 정확히
+    // 같은 계산이어야 주문 금액 검증 오차나 저장되는 단가 불일치가 생기지 않는다.
+    private double getUnitPrice(Integer itemId) {
+        double price;
+        double discountRate;
+        Item dbItem = itemRepository.findById(itemId).orElse(null);
+        if (dbItem != null) {
+            price = dbItem.getPrice();
+            discountRate = dbItem.getDiscountRate() != null ? dbItem.getDiscountRate() : 0;
+        } else {
+            StaticProductCatalog.Price staticPrice = staticProductCatalog.find(itemId)
+                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품이 포함되어 있습니다."));
+            price = staticPrice.price();
+            discountRate = staticPrice.discountRate();
+        }
+
+        return discountRate > 0
+                ? Math.round((price * (1 - discountRate / 100)) / 100.0) * 100
+                : price;
     }
 
     // 토스 결제 주문(payment="toss")은 실제 승인된 결제와 연결되어야만 주문을 생성할 수 있도록 검증.

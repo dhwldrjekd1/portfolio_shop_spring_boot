@@ -76,6 +76,7 @@ CREATE TABLE order_items (
     item_name VARCHAR(255),               -- 주문 시점의 상품명 (상품 삭제 후에도 내역 유지)
     color     VARCHAR(50),                -- 선택한 색상
     size      VARCHAR(50),                -- 선택한 사이즈
+    price     INTEGER,                    -- 주문 시점의 단가(할인 반영) - 이후 상품가가 바뀌어도 매출 통계가 흔들리지 않도록 고정 저장
     order_id  INTEGER NOT NULL            -- 주문 ID (orders.id 참조)
 );
 
