@@ -25,9 +25,10 @@ public class ReviewController {
         return ResponseEntity.ok(list);
     }
 
-    // 회원별 리뷰 조회 (마이페이지)
+    // 회원별 리뷰 조회 (마이페이지, 본인 또는 관리자)
     @GetMapping("/member/{loginId}")
-    public ResponseEntity<?> findByLoginId(@PathVariable String loginId) {
+    public ResponseEntity<?> findByLoginId(@PathVariable String loginId, HttpServletRequest request) {
+        if (!SessionAuth.isSelfOrAdmin(request, loginId)) return SessionAuth.forbidden();
         List<Review> list = reviewService.findByLoginId(loginId);
         return ResponseEntity.ok(list);
     }

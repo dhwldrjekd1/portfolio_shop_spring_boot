@@ -1,4 +1,16 @@
 server.port=8090
+# 운영에서는 리버스 프록시(Caddy 등)만 이 포트에 접근하도록 루프백에 바인딩한다.
+# 로컬에서 프록시 없이 직접 접속할 때는 이 줄을 지우거나 0.0.0.0으로 바꿔도 된다.
+server.address=127.0.0.1
+# 리버스 프록시가 TLS를 종료하는 환경(운영)에서 X-Forwarded-* 헤더를 신뢰하기 위한 설정.
+server.forward-headers-strategy=native
+
+# 로그인 세션 쿠키 보안 설정
+server.servlet.session.cookie.http-only=true
+server.servlet.session.cookie.same-site=lax
+# 운영(HTTPS)에서만 true로 켤 것 - 로컬에서 http://localhost로 접속하며 true로 두면
+# 브라우저가 세션 쿠키를 아예 보내지 않아 로그인이 끊긴 것처럼 보인다.
+server.servlet.session.cookie.secure=false
 
 spring.datasource.url=jdbc:postgresql://localhost:5432/shop
 spring.datasource.username=postgres
