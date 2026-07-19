@@ -65,14 +65,20 @@ public class BaseOrderService implements OrderService {
         cartService.deleteAll(loginId);
 
         // 총 구매금액 계산 후 자동 등급 업데이트
+        recalculateGrade(loginId);
+
+        return order;
+    }
+
+    // 취소되지 않은 주문 금액 합계로 등급 재계산. 주문 생성 시(save)와 주문 취소 시(updateStatus)
+    // 양쪽에서 동일하게 호출되어야 하므로 공용 메서드로 분리.
+    private void recalculateGrade(String loginId) {
         List<Order> allOrders = orderRepository.findByLoginIdOrderByCreatedDesc(loginId);
         int totalAmount = allOrders.stream()
                 .filter(o -> !"취소".equals(o.getStatus()))
                 .mapToInt(Order::getAmount)
                 .sum();
         memberService.updateGradeByAmount(loginId, totalAmount);
-
-        return order;
     }
 
     // 결제수단과 무관하게, 클라이언트가 보낸 금액이 실제 상품가(할인 반영) 합계 + 배송비와 일치하는지 검증.
@@ -175,13 +181,19 @@ public class BaseOrderService implements OrderService {
     public void delete(Integer id) {
         Order order = orderRepository.findById(id).orElse(null);
         if (order != null && !"취소".equals(order.getStatus())) {
-            for (OrderItem item : order.getOrderItems()) {
-                if (itemRepository.existsById(item.getItemId())) {
-                    itemRepository.increaseStock(item.getItemId(), item.getQuantity());
-                }
-            }
+            restoreStock(order);
         }
         orderRepository.deleteById(id);
+    }
+
+    // 주문 상품별 재고 복구. 주문 삭제(delete)와 주문 취소(updateStatus) 양쪽에서 동일하게 호출된다.
+    // 정적 시드 카탈로그 상품(DB에 없는 상품)은 재고 추적 대상이 아니므로 건너뛴다.
+    private void restoreStock(Order order) {
+        for (OrderItem item : order.getOrderItems()) {
+            if (itemRepository.existsById(item.getItemId())) {
+                itemRepository.increaseStock(item.getItemId(), item.getQuantity());
+            }
+        }
     }
 
     @Override
@@ -195,21 +207,12 @@ public class BaseOrderService implements OrderService {
 
         // 취소 시 재고 복구 (재고는 주문 생성 시점에 이미 차감했으므로, 취소되지 않았던 주문이 취소될 때 항상 복구)
         if ("취소".equals(status) && !"취소".equals(prevStatus)) {
-            for (OrderItem item : order.getOrderItems()) {
-                if (itemRepository.existsById(item.getItemId())) {
-                    itemRepository.increaseStock(item.getItemId(), item.getQuantity());
-                }
-            }
+            restoreStock(order);
         }
 
         // 취소 시 등급 재계산
         if ("취소".equals(status)) {
-            List<Order> allOrders = orderRepository.findByLoginIdOrderByCreatedDesc(order.getLoginId());
-            int totalAmount = allOrders.stream()
-                    .filter(o -> !"취소".equals(o.getStatus()))
-                    .mapToInt(Order::getAmount)
-                    .sum();
-            memberService.updateGradeByAmount(order.getLoginId(), totalAmount);
+            recalculateGrade(order.getLoginId());
         }
     }
 }

@@ -15,9 +15,6 @@ public class TossConfig {
     @Value("${toss.secret-key}")
     private String secretKey;
 
-    @Value("${toss.security-key}")
-    private String securityKey;
-
     // 토스페이 결제 승인 URL
     public static final String CONFIRM_URL = "https://api.tosspayments.com/v1/payments/confirm";
 }

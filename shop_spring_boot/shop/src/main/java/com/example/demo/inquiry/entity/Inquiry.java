@@ -61,6 +61,4 @@ public class Inquiry {
         this.repliedAt = LocalDateTime.now();
         this.status = "답변완료";
     }
-
-    public void delete() {}
 }
