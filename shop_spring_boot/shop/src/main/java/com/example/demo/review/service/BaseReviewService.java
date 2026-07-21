@@ -33,6 +33,12 @@ public class BaseReviewService implements ReviewService {
         return reviewRepository.findAll();
     }
 
+    // 상품 목록 평균 별점 계산용 - itemId/rating만 (공개)
+    @Override
+    public List<ReviewRepository.RatingOnly> findAllRatings() {
+        return reviewRepository.findAllProjectedBy();
+    }
+
     // 단일 리뷰 조회
     @Override
     public Review findById(Integer id) {

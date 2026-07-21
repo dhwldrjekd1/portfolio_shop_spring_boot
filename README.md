@@ -303,6 +303,7 @@ java -jar /root/shop-0.0.1-SNAPSHOT.jar &
 - **이미지 업로드가 확장자/Content-Type만 확인** (2026-07-21) — 둘 다 클라이언트가 요청에서 임의로 설정 가능한 값이라, 실행파일을 `.jpg`로 이름만 바꾸고 `Content-Type: image/jpeg`를 직접 지정해 보내면 검증을 통과하던 문제. `BaseItemService`에 매직바이트(파일 시그니처) 검증 추가 - JPEG/PNG/GIF/WEBP 실제 형식과 일치하는지 파일 내용을 직접 확인.
 - **장바구니 수량이 API로 0/음수까지 내려갈 수 있음** (2026-07-21) — `PUT /api/cart/{id}`가 수량을 검증 없이 그대로 저장해서, 직접 호출 시 0/음수로 만들 수 있던 문제(결제 단계에서 걸러져 금전적 실피해는 없었음). `Cart` 엔티티(생성자/`updateQuantity` 양쪽)에서 1 미만이면 거부하도록 검증 추가. (관련 프론트 변경: 장바구니 수량이 1일 때 "-" 버튼 비활성화)
 - **캐스팅 예외 발생 시 JVM 원본 메시지 노출** (2026-07-21) — 여러 컨트롤러가 요청 바디(`Map<String, Object>`)를 `Integer` 등으로 강제 캐스팅하는데, 예상과 다른 타입이 오면(예: JSON 숫자가 커서 Long으로 역직렬화) `ClassCastException`이 그대로 `ApiError.badRequest()`를 거쳐 클라이언트에 노출되던 문제. `DataAccessException`과 동일하게 `ApiError.safeMessage()`에서 `ClassCastException`/`NullPointerException`을 일반 메시지로 치환하도록 추가 (둘 다 이 코드베이스에서 의도적으로 던지는 곳이 없어 항상 사고성 예외).
+- **비로그인 방문자에게 상품이 전혀 안 보임 (심각)** (2026-07-21) — 프론트의 `fetchData()`가 상품별 평균 별점 계산을 위해 매번 `/api/review/all`(전체 리뷰 원문)을 호출하는데, 이 엔드포인트는 2026-07-18 인가 강화 작업 때 관리자 전용으로 바뀌었음. 프론트는 그때 같이 안 고쳐져서, 비로그인 요청은 403 응답을 그대로 받고(`fetch()`는 4xx에도 에러를 안 던짐) 이후 `allReviews.filter(...)` 호출에서 `TypeError`가 터져 `fetchData()` 전체가 실패, `products.value`가 끝까지 설정 안 되어 **관리자로 로그인하지 않은 모든 방문자에게 상품 목록이 0개로 보이던 문제** (실제 Node.js로 비로그인 상태 재현해 확인함). `/api/review/all`을 다시 공개로 되돌리는 대신, 리뷰 원문·작성자 없이 `itemId`/`rating`만 반환하는 공개 엔드포인트(`GET /api/review/ratings`, `ReviewRepository.RatingOnly` 프로젝션)를 새로 추가하고 프론트가 그걸 쓰도록 수정.
 
 ---
 

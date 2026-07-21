@@ -41,6 +41,12 @@ public class ReviewController {
         return ResponseEntity.ok(list);
     }
 
+    // 상품 목록 화면의 평균 별점 계산용 (공개) - 리뷰 내용/작성자 없이 itemId/rating만 반환
+    @GetMapping("/ratings")
+    public ResponseEntity<?> findAllRatings() {
+        return ResponseEntity.ok(reviewService.findAllRatings());
+    }
+
     // 리뷰 등록 (로그인 필요, 본인 명의로만 등록)
     @PostMapping
     public ResponseEntity<?> save(@RequestBody Map<String, Object> body, HttpServletRequest request) {

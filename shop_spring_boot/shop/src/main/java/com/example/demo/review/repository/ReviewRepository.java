@@ -11,4 +11,11 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
     List<Review> findByLoginIdOrderByCreatedDesc(String loginId);
     // 특정 회원의 특정 상품 리뷰 존재 여부
     boolean existsByItemIdAndLoginId(Integer itemId, String loginId);
+
+    // 상품 목록 화면의 평균 별점 계산용 - 리뷰 내용/작성자 없이 itemId/rating만 조회 (공개 API에서 사용)
+    interface RatingOnly {
+        Integer getItemId();
+        Integer getRating();
+    }
+    List<RatingOnly> findAllProjectedBy();
 }
