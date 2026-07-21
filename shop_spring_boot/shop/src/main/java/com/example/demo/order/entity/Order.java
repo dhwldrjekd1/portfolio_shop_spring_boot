@@ -1,5 +1,6 @@
 package com.example.demo.order.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ public class Order {
     @Column(nullable = false)
     private String payment;
 
+    @JsonIgnore
     private String cardNumber;
 
     @Column(nullable = false)

@@ -4,7 +4,7 @@
 >
 > **Backend Repository:** [portfolio_shop_spring_boot](https://github.com/dhwldrjekd1/portfolio_shop_spring_boot)
 >
-> **마지막 업데이트:** 2026-07-20
+> **마지막 업데이트:** 2026-07-21
 
 ---
 
@@ -298,6 +298,8 @@ java -jar /root/shop-0.0.1-SNAPSHOT.jar &
 - **세션 쿠키에 Secure 플래그 없음 + 백엔드 포트가 외부에 직접 노출** (2026-07-20) — 리버스 프록시(Caddy)가 TLS를 종료하고 평문으로 넘겨주는데 `server.forward-headers-strategy`가 없어 앱이 HTTPS 요청인지 인식하지 못했고, 세션 쿠키에 `Secure`가 안 붙던 문제. 게다가 백엔드가 `*:8090`(전체 인터페이스)로 바인딩되어 있고 `ufw`도 꺼져있어, 클라우드 방화벽이 따로 막지 않으면 Caddy/TLS를 거치지 않고 8090에 직접 접속할 수 있는 경로가 있었음. `server.address=127.0.0.1`로 루프백 바인딩(Caddy만 접근 가능), `server.forward-headers-strategy=native` 추가, `server.servlet.session.cookie.secure=true` 명시로 해결. (이 서비스는 `http://gm.dyy.kr` 접속 시 Caddy가 자동으로 `https://`로 리다이렉트해 평문 HTTP로 정상 접근할 경로가 없음을 확인한 뒤 secure를 강제로 켬.)
 - **미사용 코드 정리** (2026-07-20) — 아무도 호출하지 않는 `MainController`(Spring Boot 기본 생성 템플릿 그대로 방치, 실제 내용 12줄에 빈 줄 525줄), `JpaConfig`(`@EnableJpaAuditing`이지만 어떤 엔티티도 `@CreatedDate` 등을 안 써서 효과 없음), `MemberRepository.findByLoginIdAndLoginPw`(비밀번호가 bcrypt 해시라 애초에 평문 비교로는 동작할 수 없는 미사용 쿼리 메서드), `Inquiry.delete()`(빈 no-op, 실제 삭제는 리포지토리로 처리), `TossConfig.securityKey`(읽기만 하고 아무 데도 안 씀) 삭제. 동작 변화 없음.
 - **주문 서비스 내 중복 로직 통합** (2026-07-20) — `BaseOrderService`의 등급 재계산 블록(`save`/`updateStatus`)과 재고 복구 루프(`delete`/`updateStatus`)가 각각 두 곳에 동일하게 복붙되어 있던 것을 `recalculateGrade()`/`restoreStock()` 공용 메서드로 추출. 동작 변화 없음.
+- **주문/회원 API 응답에 카드번호·비밀번호 해시 노출** (2026-07-21) — `Order.cardNumber`, `Member.loginPw`(bcrypt 해시)에 `@JsonIgnore`가 빠져있어 `GET /api/order/{loginId}`, `/api/member/info/{loginId}`, `/api/member/list` 등 응답에 그대로 노출되던 문제. 둘 다 `@JsonIgnore` 추가. (`cardNumber`는 프론트에 이미 이 필드를 채우는 UI가 없어 실제로 값이 채워지는 경우는 거의 없었지만, 필드 자체가 무방비로 노출돼 있던 건 별개 문제.)
+- **리뷰 구매확인/작성확인 API에 인가 검증 누락** (2026-07-21) — `GET /api/review/check/purchased/{loginId}/{itemId}`, `/check/reviewed/{loginId}/{itemId}`에 `SessionAuth` 체크가 없어, 로그인 여부와 무관하게 임의 loginId의 구매 여부·리뷰 작성 여부를 조회할 수 있던 문제. 다른 마이페이지성 조회 API와 동일하게 `isSelfOrAdmin` 검증 추가.
 
 ---
 

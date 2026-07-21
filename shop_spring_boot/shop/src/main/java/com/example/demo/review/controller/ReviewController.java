@@ -86,16 +86,18 @@ public class ReviewController {
         }
     }
 
-    // 구매 여부 확인
+    // 구매 여부 확인 (본인 또는 관리자)
     @GetMapping("/check/purchased/{loginId}/{itemId}")
-    public ResponseEntity<?> hasPurchased(@PathVariable String loginId, @PathVariable Integer itemId) {
+    public ResponseEntity<?> hasPurchased(@PathVariable String loginId, @PathVariable Integer itemId, HttpServletRequest request) {
+        if (!SessionAuth.isSelfOrAdmin(request, loginId)) return SessionAuth.forbidden();
         boolean result = reviewService.hasPurchased(loginId, itemId);
         return ResponseEntity.ok(Map.of("hasPurchased", result));
     }
 
-    // 리뷰 작성 여부 확인
+    // 리뷰 작성 여부 확인 (본인 또는 관리자)
     @GetMapping("/check/reviewed/{loginId}/{itemId}")
-    public ResponseEntity<?> hasReviewed(@PathVariable String loginId, @PathVariable Integer itemId) {
+    public ResponseEntity<?> hasReviewed(@PathVariable String loginId, @PathVariable Integer itemId, HttpServletRequest request) {
+        if (!SessionAuth.isSelfOrAdmin(request, loginId)) return SessionAuth.forbidden();
         boolean result = reviewService.hasReviewed(loginId, itemId);
         return ResponseEntity.ok(Map.of("hasReviewed", result));
     }

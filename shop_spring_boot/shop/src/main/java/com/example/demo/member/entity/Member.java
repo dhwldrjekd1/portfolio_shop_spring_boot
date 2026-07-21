@@ -1,5 +1,6 @@
 package com.example.demo.member.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import java.time.LocalDateTime;
@@ -21,7 +22,8 @@ public class Member {
     private String loginId;
 
     @Column(length = 255, nullable = false)
-    private String loginPw; // 비밀번호는 암호화된 문자열 저장
+    @JsonIgnore
+    private String loginPw; // 비밀번호는 암호화된 문자열 저장 (API 응답에 노출되지 않도록 JsonIgnore)
 
     @Column(length = 100, nullable = false, unique = true)
     private String email;
