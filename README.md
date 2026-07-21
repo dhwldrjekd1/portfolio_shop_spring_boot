@@ -300,6 +300,9 @@ java -jar /root/shop-0.0.1-SNAPSHOT.jar &
 - **주문 서비스 내 중복 로직 통합** (2026-07-20) — `BaseOrderService`의 등급 재계산 블록(`save`/`updateStatus`)과 재고 복구 루프(`delete`/`updateStatus`)가 각각 두 곳에 동일하게 복붙되어 있던 것을 `recalculateGrade()`/`restoreStock()` 공용 메서드로 추출. 동작 변화 없음.
 - **주문/회원 API 응답에 카드번호·비밀번호 해시 노출** (2026-07-21) — `Order.cardNumber`, `Member.loginPw`(bcrypt 해시)에 `@JsonIgnore`가 빠져있어 `GET /api/order/{loginId}`, `/api/member/info/{loginId}`, `/api/member/list` 등 응답에 그대로 노출되던 문제. 둘 다 `@JsonIgnore` 추가. (`cardNumber`는 프론트에 이미 이 필드를 채우는 UI가 없어 실제로 값이 채워지는 경우는 거의 없었지만, 필드 자체가 무방비로 노출돼 있던 건 별개 문제.)
 - **리뷰 구매확인/작성확인 API에 인가 검증 누락** (2026-07-21) — `GET /api/review/check/purchased/{loginId}/{itemId}`, `/check/reviewed/{loginId}/{itemId}`에 `SessionAuth` 체크가 없어, 로그인 여부와 무관하게 임의 loginId의 구매 여부·리뷰 작성 여부를 조회할 수 있던 문제. 다른 마이페이지성 조회 API와 동일하게 `isSelfOrAdmin` 검증 추가.
+- **이미지 업로드가 확장자/Content-Type만 확인** (2026-07-21) — 둘 다 클라이언트가 요청에서 임의로 설정 가능한 값이라, 실행파일을 `.jpg`로 이름만 바꾸고 `Content-Type: image/jpeg`를 직접 지정해 보내면 검증을 통과하던 문제. `BaseItemService`에 매직바이트(파일 시그니처) 검증 추가 - JPEG/PNG/GIF/WEBP 실제 형식과 일치하는지 파일 내용을 직접 확인.
+- **장바구니 수량이 API로 0/음수까지 내려갈 수 있음** (2026-07-21) — `PUT /api/cart/{id}`가 수량을 검증 없이 그대로 저장해서, 직접 호출 시 0/음수로 만들 수 있던 문제(결제 단계에서 걸러져 금전적 실피해는 없었음). `Cart` 엔티티(생성자/`updateQuantity` 양쪽)에서 1 미만이면 거부하도록 검증 추가. (관련 프론트 변경: 장바구니 수량이 1일 때 "-" 버튼 비활성화)
+- **캐스팅 예외 발생 시 JVM 원본 메시지 노출** (2026-07-21) — 여러 컨트롤러가 요청 바디(`Map<String, Object>`)를 `Integer` 등으로 강제 캐스팅하는데, 예상과 다른 타입이 오면(예: JSON 숫자가 커서 Long으로 역직렬화) `ClassCastException`이 그대로 `ApiError.badRequest()`를 거쳐 클라이언트에 노출되던 문제. `DataAccessException`과 동일하게 `ApiError.safeMessage()`에서 `ClassCastException`/`NullPointerException`을 일반 메시지로 치환하도록 추가 (둘 다 이 코드베이스에서 의도적으로 던지는 곳이 없어 항상 사고성 예외).
 
 ---
 
