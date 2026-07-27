@@ -39,9 +39,10 @@ public class MemberController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body, HttpServletRequest request) {
         String loginId = body.get("loginId");
+        String ip = request.getRemoteAddr();
 
-        if (loginAttemptService.isLocked(loginId)) {
-            long sec = loginAttemptService.remainingLockSeconds(loginId);
+        if (loginAttemptService.isLocked(loginId, ip)) {
+            long sec = loginAttemptService.remainingLockSeconds(loginId, ip);
             return ResponseEntity.status(429).body(Map.of(
                     "success", false,
                     "message", "로그인 시도가 너무 많습니다. " + sec + "초 후 다시 시도해주세요."
@@ -50,7 +51,7 @@ public class MemberController {
 
         Member member = memberService.find(loginId, body.get("loginPw"));
         if (member != null) {
-            loginAttemptService.loginSucceeded(loginId);
+            loginAttemptService.loginSucceeded(loginId, ip);
             String role = member.getRole() != null ? member.getRole() : "user";
             SessionAuth.login(request, member.getLoginId(), role);
             return ResponseEntity.ok(Map.of(
@@ -61,7 +62,7 @@ public class MemberController {
                     "role", role
             ));
         }
-        loginAttemptService.loginFailed(loginId);
+        loginAttemptService.loginFailed(loginId, ip);
         return ResponseEntity.badRequest().body(Map.of("success", false, "message", "아이디 또는 비밀번호가 틀렸습니다."));
     }
 

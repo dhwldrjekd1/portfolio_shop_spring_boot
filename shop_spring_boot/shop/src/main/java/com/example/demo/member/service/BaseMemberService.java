@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Service // 서비스임을 선언
 @RequiredArgsConstructor // 자동으로 생성자 주입
@@ -131,9 +132,14 @@ public class BaseMemberService implements MemberService {
         memberRepository.save(member);
     }
 
+    private static final Set<String> VALID_ROLES = Set.of("user", "admin", "banned");
+
     // role 변경 (관리자)
     @Override
     public void updateRole(String loginId, String role) {
+        if (!VALID_ROLES.contains(role)) {
+            throw new IllegalArgumentException("role은 user, admin, banned 중 하나여야 합니다.");
+        }
         Member member = memberRepository.findByLoginId(loginId).orElseThrow();
         member.updateRole(role);
         memberRepository.save(member);

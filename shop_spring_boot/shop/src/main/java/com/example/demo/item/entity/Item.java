@@ -44,10 +44,12 @@ public class Item {
     // ===== 상품 등록용 생성자 =====
     public Item(String name, String imagePath, Double price, Double discountRate,
                 Integer stock, String description, String category, String badge) {
+        validatePrice(price);
+        discountRate = validateDiscountRate(discountRate);
         this.name         = name;
         this.imagePath    = imagePath;
         this.price        = price;
-        this.discountRate = discountRate != null ? discountRate : 0.0;
+        this.discountRate = discountRate;
         this.stock        = stock != null ? stock : 0;
         this.description  = description;
         this.category     = category;
@@ -59,14 +61,31 @@ public class Item {
     // ===== 상품 기본 정보 수정 =====
     public void update(String name, String imagePath, Double price, Double discountRate,
                        Integer stock, String description, String category, String badge) {
+        validatePrice(price);
+        discountRate = validateDiscountRate(discountRate);
         this.name         = name;
         if (imagePath != null && !imagePath.isEmpty()) this.imagePath = imagePath;
         this.price        = price;
-        this.discountRate = discountRate != null ? discountRate : 0.0;
+        this.discountRate = discountRate;
         this.stock        = stock != null ? stock : 0;
         this.description  = description;
         this.category     = category;
         this.badge        = badge;
+    }
+
+    // 가격/할인율이 잘못 저장되면 결제 금액 계산이 통째로 깨지므로, 저장 직전에 항상 검증
+    private static void validatePrice(Double price) {
+        if (price == null || price < 0) {
+            throw new IllegalArgumentException("가격은 0 이상이어야 합니다.");
+        }
+    }
+
+    private static Double validateDiscountRate(Double discountRate) {
+        if (discountRate == null) return 0.0;
+        if (discountRate < 0 || discountRate > 100) {
+            throw new IllegalArgumentException("할인율은 0~100 사이여야 합니다.");
+        }
+        return discountRate;
     }
 
     // ===== 세부정보 수정 (JSON 문자열로 저장) =====
@@ -81,6 +100,6 @@ public class Item {
 
     // ===== 할인율 수정 =====
     public void updateDiscountRate(Double discountRate) {
-        this.discountRate = discountRate;
+        this.discountRate = validateDiscountRate(discountRate);
     }
 }

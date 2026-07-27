@@ -1,6 +1,5 @@
 package com.example.demo.review.service;
 
-import com.example.demo.order.entity.Order;
 import com.example.demo.order.repository.OrderRepository;
 import com.example.demo.review.entity.Review;
 import com.example.demo.review.repository.ReviewRepository;
@@ -76,11 +75,7 @@ public class BaseReviewService implements ReviewService {
     // 구매 여부 확인 (배송완료 상태인 주문에 해당 상품이 있는지)
     @Override
     public boolean hasPurchased(String loginId, Integer itemId) {
-        List<Order> orders = orderRepository.findByLoginIdOrderByCreatedDesc(loginId);
-        return orders.stream()
-                .filter(o -> "배송완료".equals(o.getStatus()))
-                .flatMap(o -> o.getOrderItems().stream())
-                .anyMatch(i -> i.getItemId().equals(itemId));
+        return orderRepository.existsByLoginIdAndStatusAndOrderItems_ItemId(loginId, "배송완료", itemId);
     }
 
     // 이미 리뷰 작성 여부 확인
